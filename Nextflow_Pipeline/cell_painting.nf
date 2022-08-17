@@ -1,33 +1,33 @@
 #!/usr/bin/env nextflow
 
-/* images are input files, each with a specific plateID */
-image_dir_ch=Channel.fromPath('/project/shared/gcrb_igvf/ashley/${plateid}')
+/*this is the directory that leads to all of the plates*/
+image_dir_ch=Channel.fromPath('/project/shared/gcrb_igvf/ashley/*')
 /* cell profiler pipeline for illumination correction */
+illum_correct_pipe=Channel.fromPath('/path/to/cellprofiler/illum/pipeline/*.cppipe')
 /* cell profiler pipeline for analysis */
-
-/*process breakupfiles{
-    break up image files into equal sized directories - maybe don't need this, as I would have max 13,824 images per plate.
-} */
+analysis_pipe=Channel.fromPath('/path/to/cellprofiler/analysis/pipeline/*.cppipe')
 
 process createLoadDataCsvs{
-    /*use script I created to create the load data csv*/
+    tag "${plateid}"
+
     input:
-    tuple val(plate_id), path(plate_dir) from input_images_ch
-    /*images separated by plateid*/
+    path image_dir_ch
     
     ouput:
-    tuple val(plate_id), file("load_data_${plate_id}.csv") into load_data_ch
+    tuple val (plateid), file("{plateid}_load_data.csv") into load_data_csv_ch
 
     script:
-    ./generate_load_data.sh ${plate_dir}
-    /*create list of plates*/
+   ./generate_load_data.sh ${image_dir_ch}
 }
 
 process illuminationMeasurement{
     input:
-    tuple val(plate_id), file("load_data_${plate_id}.csv") from load_data_ch
-    file("Cell_Painting_Illum_8x_forbroad.cppipe") from illum_cppipe_ch
-    path images from '/some/data/file.txt'
+    /*load_data.csv file*/
+    tuple val (plateid), file("{plateid}_load_data.csv") from load_data_csv_ch
+    /*path to the images*/
+    path image_dir_ch
+    /*file for cellprofiler pipeline*/
+    file cellpipe from illum_correct_pipe
 
     output:
 
