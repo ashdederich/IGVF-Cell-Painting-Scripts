@@ -12,7 +12,6 @@ args=commandArgs(trailingOnly=TRUE)
 #read in the file and change blanks to DMSO
 datafile=fread(args[1])
 filetype=args[2]
-group=args[3]
 
 datafile$Metadata_broad_sample[which(datafile$Metadata_broad_sample=="")]<-"DMSO"
 plateid=unique(datafile$Metadata_Plate)
@@ -77,5 +76,5 @@ df_cor_rand_melt<-cbind(fake=rep("Randomized",nrow(df_cor_rand_melt)),df_cor_ran
 
 #combine the two dataframes and create graph
 df_cor_all<-rbind(df_cor_melt,df_cor_rand_melt)
-ggplot(df_cor_all,aes(factor(fake),Correlation)) + geom_violin(scale='width') + geom_dotplot(binaxis='y', stackdir='center', dotsize=0.2) + theme(axis.text.x=element_text(angle=45,hjust=1)) + ggtitle(paste0(filetype,"\nReplicate Correlations for", group, "Test Experiment")) +xlab("Comparison Group") + ylab("Correlation Value")
+ggplot(df_cor_all,aes(factor(fake),Correlation)) + geom_violin(scale='width') + geom_dotplot(binaxis='y', stackdir='center', dotsize=0.2) + theme(axis.text.x=element_text(angle=45,hjust=1)) + ggtitle(paste0(filetype,"\nReplicate Correlations")) +xlab("Comparison Group") + ylab("Correlation Value")
 ggsave(paste0(plateid,"_",filetype,"_","violin_plot.pdf"))
