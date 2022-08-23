@@ -12,13 +12,14 @@ analysis_pipe=Channel.fromPath('/path/to/cellprofiler/analysis/pipeline/*.cppipe
 /*a text file with the list of cellular locations, one per line. These must match how they are written in the .npy files*/
 cellfile_ch=Channel.fromPath('/path/to/cellfile/cell_locations.txt')
 config_ch=Channel.fromPath('/path/to/pycyto/configFiles/*_config.yml')
-params.batchID=''
+params.batch=''
 barcode_platemap_ch=Channel.fromPath('/path/to/platemap/barcode_platemap.csv')
 platemap_ch=Channel.fromPath('/same/path/as/above/platemap.txt')
 metadata_ch=Channel.fromPath('/path/to/external_metadata/metadata.tsv')
 
 
 process createLoadDataCsvs{
+    publishDir 'workdir_ch/load_data_csv/${params.batch}/${plateid}/', mode: 'move'
     tag "${plateid}"
 
     input:
@@ -35,6 +36,7 @@ process createLoadDataCsvs{
 }
 
 process illuminationMeasurement{
+    publishDir 'workdir_ch/illum/${params.batch}/${plateid}/', mode: 'move'
     tag "${plateid}"
     
     input:
@@ -57,6 +59,7 @@ process illuminationMeasurement{
 }
 
 process createIllumLoadDataCsvs{
+    publishDir 'workdir_ch/load_data_csv/${params.batch}/${plateid}/', mode: 'move'
     tag "${plateid}"
     
     input:
@@ -76,6 +79,7 @@ process createIllumLoadDataCsvs{
 }
 
 process cpAnalysis{
+    publishDir 'workdir_ch/profiles/${params.batch}/${plateid}/', mode: 'move'
     tag "${plateid}"
     
     input:
@@ -97,6 +101,7 @@ process cpAnalysis{
 }
 
 process prepare_for_PyCyto{
+    publishDir 'workdir_ch/profiles/${params.batch}/${plateid}/', mode: 'move'
     tag "${plateid}"
     
     input:
@@ -146,6 +151,7 @@ process create_PyCyto_Dirs{
 }
 
 process pyCyto{
+    publishDir 'workdir_ch/profiles/${params.batch}/${plateid}/', mode: 'move'
     tag "${plateid}"
     tag "${params.batch}"
 
@@ -167,6 +173,7 @@ process pyCyto{
 }
 
 process qc_figs{
+    publishDir 'workdir_ch/quality_control/correlation_figs/${params.batch}/${plateid}/', mode: 'move'
     tag "${plateid}"
     tag "${params.batch}"
 
