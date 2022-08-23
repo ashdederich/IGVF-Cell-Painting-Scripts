@@ -2,10 +2,8 @@
 
 /*this is the directory that leads to all of the plates*/
 image_dir_ch=Channel.fromPath('/project/shared/gcrb_igvf/ashley/*')
-/*image files*/
-images_ch=Channel.fromPath('/path/to/images/files/plateid/*.tif')
+image_dir_ch.into {image_dir_loaddata; image_dir_illumcorrection; image_dir_analysis }
 /* cell profiler pipeline for illumination correction */
-images_ch.into {images_illumcorrection; images_analysis }
 illum_correct_pipe=Channel.fromPath('/path/to/cellprofiler/illum/pipeline/*.cppipe')
 /* cell profiler pipeline for analysis */
 analysis_pipe=Channel.fromPath('/path/to/cellprofiler/analysis/pipeline/*.cppipe')
@@ -23,14 +21,14 @@ process createLoadDataCsvs{
     tag "${plateid}"
 
     input:
-    path image_dir_ch
+    path image_dir from image_dir_loaddata
     
     ouput:
     tuple val (plateid), file("{plateid}_load_data.csv") into load_data_csv_ch
 
     script:
     """
-   ./generate_load_data.sh ${image_dir_ch}
+   ./generate_load_data.sh $image_dir
    mv ${image_dir_ch}/load_data.csv ${plateid}_load_data.csv
    """
 }
@@ -43,7 +41,7 @@ process illuminationMeasurement{
     /*load_data.csv file*/
     tuple val(plateid), file("${plateid}_load_data.csv") from load_data_csv_ch
     /*path to the images*/
-    path(image_files) from images_illumcorrection
+    path(image_dir) from image_dir_illumcorrection
     /*file for cellprofiler pipeline*/
     file illumpipe from illum_correct_pipe
 
@@ -53,7 +51,7 @@ process illuminationMeasurement{
 
     script:
     """
-    cellprofiler -c -r -p ${illumpipe} --data-file ${plateid}_load_data.csv -i $image_files -o ${plateid}_out
+    cellprofiler -c -r -p ${illumpipe} --data-file ${plateid}_load_data.csv -i $image_dir -o ${plateid}_out
     """
 /*I need to download cellprofiler and pycytominer into a singularity or docker container*/   
 }
@@ -85,7 +83,7 @@ process cpAnalysis{
     input:
     tuple val(plateid), file("${plateid}_load_data_with_illum.csv") into illum_loaddata_ch
     file analysispipe from analysis_pipe
-    path(imagefiles) from images_analysis
+    path(image_dir) from image_dir_analysis
 
     output:
     tuple val(plateid), path("${plateid}_out/IGVF_painting_results/${plateid}_IGVFCells.csv"), path("${plateid}_out/IGVF_painting_results/${plateid}_IGVFCytoplasm.csv"), path("${plateid}_out/IGVF_painting_results/${plateid}_IGVFNuclei.csv") into analysis_output_ch
@@ -93,7 +91,7 @@ process cpAnalysis{
 
     script:
     """
-    cellprofiler -c -r -p $analysispipe --data-file ${plateid}_load_data_with_illum.csv -i $imagefiles
+    cellprofiler -c -r -p $analysispipe --data-file ${plateid}_load_data_with_illum.csv -i $image_dir
     mv ${plateid}_out/IGVF_painting_results/IGVFCells.csv ${plateid}_out/IGVF_painting_results/${plateid}_IGVFCells.csv
     mv ${plateid}_out/IGVF_painting_results/IGVFCytoplasm.csv ${plateid}_out/IGVF_painting_results/${plateid}_IGVFCytoplasm.csv
     mv ${plateid}_out/IGVF_painting_results/IGVFNuclei.csv ${plateid}_out/IGVF_painting_results/${plateid}_IGVFNuclei.csv
