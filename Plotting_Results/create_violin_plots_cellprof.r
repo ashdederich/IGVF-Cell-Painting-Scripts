@@ -25,7 +25,7 @@ datafile$Metadata_broad_sample[which(datafile$Metadata_broad_sample=="")]<-"DMSO
 plateid=unique(datafile$Metadata_Plate)
 
 #create replicate information
-broad_well<-paste0(datafile$Metadata_broad_sample,"_",datafile$Metadata_Well)
+broad_well<-paste0(datafile$Metadata_broad_sample,"_",datafile$Metadata_Plate)
 datafile<-cbind(broad_well,datafile)
 datafile<-datafile %>% group_by(Metadata_broad_sample) %>% mutate(Replicate = cumsum(!duplicated(broad_well)))
 datafile$Replicate[which(datafile$Metadata_broad_sample=="DMSO")]<-c(rep(1:4,length(datafile$Metadata_broad_sample[which(datafile$Metadata_broad_sample=="DMSO")])),1)
@@ -85,5 +85,5 @@ df_cor_rand_melt<-cbind(fake=rep("Randomized",nrow(df_cor_rand_melt)),df_cor_ran
 #combine the two dataframes and create graph
 df_cor_all<-rbind(df_cor_melt,df_cor_rand_melt)
 quantile_randomized<-quantile(df_cor_all$Correlation[which(df_cor_all$fake=="Randomized")],0.95,na.rm=TRUE)
-ggplot(df_cor_all,aes(factor(fake),Correlation)) + geom_violin(scale='width') + geom_dotplot(binaxis='y', stackdir='center', dotsize=0.2) + theme(axis.text.x=element_text(angle=45,hjust=1)) + ggtitle(paste0(filetype,"\nReplicate Correlations")) +xlab("Comparison Group") + ylab("Correlation Value") + geom_hline(yintercept=quantile_randomized, color='red',linetype='dashed')
-ggsave(paste0(plateid,"_",filetype,"_","violin_plot.pdf"))
+ggplot(df_cor_all,aes(factor(fake),Correlation)) + geom_violin(scale='width') + theme(axis.text.x=element_text(angle=45,hjust=1)) + ggtitle(paste0(filetype,"\nReplicate Correlations")) +xlab("Comparison Group") + ylab("Correlation Value") + geom_hline(yintercept=quantile_randomized, color='red',linetype='dashed')
+ggsave(paste0(filetype,"_","violin_plot.pdf"))
