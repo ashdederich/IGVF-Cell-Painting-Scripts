@@ -15,7 +15,6 @@ metadata=fread(args[2])
 platemap=fread(args[3])
 filetype=args[4]
 
-
 ext_meta<-merge(metadata,platemap,by="broad_sample")
 names(ext_meta)[names(ext_meta) == 'well_position'] <- 'Metadata_Well'
 ext_meta=data.frame(broad_sample=ext_meta$broad_sample,Metadata_Well=ext_meta$Metadata_Well)
