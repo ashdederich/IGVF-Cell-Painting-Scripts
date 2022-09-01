@@ -1,4 +1,5 @@
 #!/usr/bin/env Rscript
+#Merge each file outputted from CellProfiler (e.g. Cells.csv, Nucleus.csv, and Cytoplasm.csv) into one jointed plate csv file for input into PyCytominer.
 
 library(data.table)
 library(reshape)
