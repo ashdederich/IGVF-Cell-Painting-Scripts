@@ -19,6 +19,7 @@ mydf_new<-mydf[,grep("Cells",colnames(mydf))[[1]]:ncol(mydf)]
 mydf_new<-cbind(mydf$Metadata_broad_sample,mydf_new)
 colnames(mydf_new)[1]<-"Metadata_broad_sample"
 mydf_new$Metadata_broad_sample[which(mydf_new$Metadata_broad_sample=="")]<-"DMSO"
+compounds=unique(mydf_new$Metadata_broad_sample)
 mydf_new<-melt(mydf_new)
 names(mydf_new)[names(mydf_new)=="variable"]<-"Measurement"
 names(mydf_new)[names(mydf_new)=="value"]<-"Ashley_Median"
@@ -28,7 +29,8 @@ comparisondf_new<-comparisondf[,grep("Cells",colnames(comparisondf))[[1]]:ncol(c
 comparisondf_new<-cbind(comparisondf$Metadata_broad_sample,comparisondf_new)
 colnames(comparisondf_new)[1]<-"Metadata_broad_sample"
 comparisondf_new$Metadata_broad_sample[which(comparisondf_new$Metadata_broad_sample=="")]<-"DMSO"
-comparisondf_new<-melt(comparisondf_new)
+comparisondf_subset=comparisondf_new[comparisondf_new$Metadata_broad_sample %in% compounds,]
+comparisondf_new<-melt(comparisondf_subset)
 names(comparisondf_new)[names(comparisondf_new)=="variable"]<-"Measurement"
 names(comparisondf_new)[names(comparisondf_new)=="value"]<-"Broad_Median"
 
