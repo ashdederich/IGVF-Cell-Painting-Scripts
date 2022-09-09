@@ -63,9 +63,7 @@ names(comparisondf_new)[names(comparisondf_new)=="variable"]<-"Measurement"
 names(comparisondf_new)[names(comparisondf_new)=="value"]<-"Broad_Median"
 
 #merge data sheets by type
-df_all<-merge(mydf_new,comparisondf_new,by=c("Metadata_broad_sample","Measurement"))
 df_all<-inner_join(x=mydf_new,y=comparisondf_new,by=c("Metadata_broad_sample","Measurement"))
-
 #calculate the slope and add to the plot
 df_all_lm<-lm(UTSW_Median~Broad_Median,df_all)
 df_all_lmcoef<-coef(df_all_lm)
