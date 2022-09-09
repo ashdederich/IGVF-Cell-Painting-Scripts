@@ -47,7 +47,7 @@ df_all_lmcoef=cbind(UTSW_Median=1,Broad_Median=1,df_all_lmcoef)
 
 #creating correlation plot by Metadata_Compound
 ggplot(df_all, aes(x=UTSW_Median,Broad_Median)) + geom_point(colour="black") + geom_smooth(method='lm',formula=y~x, colour="black") + stat_poly_eq() + labs(title=paste0("Correlation between Broad Data Set and UTSW\nAfter PyCytominer Using the ",filetype," File")) + geom_abs_text(data=df_all_lmcoef,mapping = aes(label = Slope),color="black",size=3.5,xpos=0.1,ypos=0.9)
-ggsave(paste0("CorrelationPlot_AllData_",filetype,".pdf"))
+ggsave(paste0("CorrelationPlot_AllData_",filetype,".png"), type = "cairo")
 
 #summarizing by compound
 #calculate lm for each broad sample
@@ -62,4 +62,4 @@ cmpd_lm_coef$Slope<-ldply(paste0("Slope=",cmpd_lm_coef$Slope))
 colnames(cmpd_lm_coef[,3])<-"Slope"
 
 ggplot(df_all, aes(x=UTSW_Median,y=Broad_Median,group=Metadata_broad_sample,color=Metadata_broad_sample)) + geom_point() + geom_smooth(method='lm',formula=y~x) + facet_wrap(~Metadata_broad_sample,scales="free") + labs(title=paste0("Correlation between Broad Data Set and Ours\nAfter PyCytominer Using the ",filetype," File")) + stat_poly_eq(label.x="left",label.y="top",size=2.5,color="black") + theme(strip.text = element_text(size = 6.2)) + geom_abs_text(data=cmpd_lm_coef,mapping = aes(label = Slope),color="black",size=2.5,xpos=0.85,ypos=0.18)
-ggsave(paste0("CorrelationPlot_ByCmpd_",filetype,".pdf"))
+ggsave(paste0("CorrelationPlot_ByCmpd_",filetype,".png"), type = "cairo")
