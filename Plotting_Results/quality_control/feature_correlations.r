@@ -1,4 +1,4 @@
-#!/usr/bin/env Rscript --vanilla
+#!/usr/bin/env Rscript
 #Aggregate data output from Cell Painting.
 #This file requires one input file input file to aggregate: this is the output file from CellProfiler.
 
