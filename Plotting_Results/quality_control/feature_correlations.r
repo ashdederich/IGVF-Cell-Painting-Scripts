@@ -96,5 +96,4 @@ names(compdf)[names(compdf)=="value"]<-"Broad_Value"
 merg_dfs<-inner_join(x=origdf,y=compdf,by="Measurement")
 
 ggplot(merg_dfs) + stat_function(aes(x=Broad_Value,color="Broad"),fun=dnorm,args=list(mean=mean(merg_dfs$Broad_Value,na.rm=TRUE),sd=sd(merg_dfs$Broad_Value,na.rm=TRUE))) + stat_function(aes(x=UTSW_Value,color="UTSW"),fun=dnorm,args=list(mean=mean(merg_dfs$UTSW_Value,na.rm=TRUE),sd=sd(merg_dfs$UTSW_Value,na.rm=TRUE))) + ylab("") + xlab("") + theme(legend.position = 'bottom',legend.text = element_text(color='black',face='bold'),legend.title = element_text(color='black',face='bold')) + labs(color='Group',y='') + scale_color_manual(values=c('blue','black')) + labs(title=paste0("Distribution of All ",filegroup," Feature Values"))
-ggsave(paste0("MeanBellCurveAcross_",filegroup,"_Features.png"), type = "cairo")
-
+ggsave(paste0("BellCurveAcross_",filegroup,"_Features.png"), type = "cairo")
