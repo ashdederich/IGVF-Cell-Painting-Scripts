@@ -10,6 +10,7 @@ library(tools)
 library(ggplot2)
 library(ggpmisc)
 library(zplyr)
+library(dplyr)
 
 datafile=fread(args[1])
 comparisondf=fread(args[2])
@@ -80,8 +81,20 @@ ggplot(merged,aes(UTSW_Standard_Deviation,Broad_Standard_Deviation)) + geom_poin
 ggsave(paste0("SDCorrelationAcross_",filegroup,"_Features.png"), type = "cairo")
 
 #plot bell curve of both data sets, too
-ggplot(merged) + stat_function(aes(x=Broad_Mean,color="Broad"),fun=dnorm) + stat_function(aes(x=UTSW_Mean,color="UTSW"),fun=dnorm,args=list(mean=mean(merged$UTSW_Mean,na.rm=TRUE),sd=sd(merged$UTSW_Mean,na.rm=TRUE))) + ylab("") + xlab("") + theme(legend.position = 'bottom',legend.text = element_text(color='black',face='bold'),legend.title = element_text(color='black',face='bold')) + labs(color='Group',y='') + scale_color_manual(values=c('blue','black')) + labs(title=paste0("Distribution of the Mean of All\n",filegroup," Feature Values"))
+origdf<-datafile[,grep("Cells",colnames(datafile))[[1]]:ncol(datafile)]
+origdf<-cbind(Metadata_Plate=datafile$Metadata_Plate,origdf)
+origdf=melt(origdf)
+names(origdf)[names(origdf)=="variable"]<-"Measurement"
+names(origdf)[names(origdf)=="value"]<-"UTSW_Value"
+
+compdf<-comparisondf[,grep("Cells",colnames(comparisondf))[[1]]:ncol(comparisondf)]
+compdf<-cbind(Metadata_Plate=comparisondf$Metadata_Plate,compdf)
+compdf<-melt(compdf)
+names(compdf)[names(compdf)=="variable"]<-"Measurement"
+names(compdf)[names(compdf)=="value"]<-"Broad_Value"
+
+merg_dfs<-inner_join(x=origdf,y=compdf,by="Measurement")
+
+ggplot(merg_dfs) + stat_function(aes(x=Broad_Value,color="Broad"),fun=dnorm,args=list(mean=mean(merg_dfs$Broad_Value,na.rm=TRUE),sd=sd(merg_dfs$Broad_Value,na.rm=TRUE))) + stat_function(aes(x=UTSW_Value,color="UTSW"),fun=dnorm,args=list(mean=mean(merg_dfs$UTSW_Value,na.rm=TRUE),sd=sd(merg_dfs$UTSW_Value,na.rm=TRUE))) + ylab("") + xlab("") + theme(legend.position = 'bottom',legend.text = element_text(color='black',face='bold'),legend.title = element_text(color='black',face='bold')) + labs(color='Group',y='') + scale_color_manual(values=c('blue','black')) + labs(title=paste0("Distribution of All ",filegroup," Feature Values"))
 ggsave(paste0("MeanBellCurveAcross_",filegroup,"_Features.png"), type = "cairo")
 
-ggplot(merged) + stat_function(aes(x=Broad_Standard_Deviation,color="Broad"),fun=dnorm) + stat_function(aes(x=UTSW_Standard_Deviation,color="UTSW"),fun=dnorm,args=list(mean=mean(merged$UTSW_Standard_Deviation,na.rm=TRUE),sd=sd(merged$UTSW_Standard_Deviation,na.rm=TRUE))) + ylab("") + xlab("") + theme(legend.position = 'bottom',legend.text = element_text(color='black',face='bold'),legend.title = element_text(color='black',face='bold')) + labs(color='Group',y='') + scale_color_manual(values=c('blue','black')) + labs(title=paste0("Distribution of the Standard Deviation of All\n",filegroup," Feature Values"))
-ggsave(paste0("SDBellCurveAcross_",filegroup,"_Features.png"), type = "cairo")
