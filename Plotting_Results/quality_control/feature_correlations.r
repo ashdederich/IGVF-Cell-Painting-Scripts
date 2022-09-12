@@ -13,6 +13,7 @@ library(zplyr)
 
 datafile=fread(args[1])
 comparisondf=fread(args[2])
+filegroup=args[3]
 
 calc_mean<-function(input_file){
     #take mean and std of each column
@@ -73,7 +74,7 @@ correl<-correlate(merged)
 
 #plotting the correlation results
 ggplot(merged, aes(x=UTSW_Mean,Broad_Mean)) + geom_point(colour="black") + geom_smooth(method='lm',formula=y~x, colour="black") + stat_poly_eq() + labs(title=paste0("Correlation between Broad and UTSW\nMean Feature Values")) + geom_abs_text(data=correl,mapping = aes(label = Mean_Slope),color="black",size=3.8,xpos=0.155,ypos=0.89)
-ggsave("MeanCorrelationAcrossFeatures.png"), type = "cairo")
+ggsave(paste0("MeanCorrelationAcross_",filegroup,"_Features.png"), type = "cairo")
 
 ggplot(merged,aes(UTSW_Standard_Deviation,Broad_Standard_Deviation)) + geom_point(colour="black") + geom_smooth(method='lm',formula=y~x,colour="black") + stat_poly_eq() + geom_abs_text(data=correl,mapping = aes(label = SD_Slope),color="black",size=3.8,xpos=0.143,ypos=0.89) + labs(title=paste0("Correlation of Standard Deviations between\nBroad and UTSW Feature Values"))
-ggsave("SDCorrelationAcrossFeatures.png"), type = "cairo")
+ggsave(paste0("SDCorrelationAcross_",filegroup,"_Features.png"), type = "cairo")
