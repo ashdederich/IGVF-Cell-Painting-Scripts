@@ -42,19 +42,27 @@ calc_sd<-function(input_file){
 
 
 mymean=calc_mean(datafile)
+my_out_mean<-boxplot(mymean$Mean, plot=FALSE)$out
+my_NOout_mean<-mymean[-which(mymean$Mean %in% my_out_mean),]
 mysd=calc_sd(datafile)
-names(mymean)[names(mymean)=="Mean"]<-"UTSW_Mean"
-names(mysd)[names(mysd)=="Standard_Deviation"]<-"UTSW_Standard_Deviation"
-my_mean_sd<-merge(mymean,mysd,by="Measurement")
-
+my_out_sd<-boxplot(mysd$Standard_Deviation, plot=FALSE)$out
+my_NOout_sd<-mysd[-which(mysd$Standard_Deviation %in% my_out_sd),]
+names(my_NOout_mean)[names(my_NOout_mean)=="Mean"]<-"UTSW_Mean"
+names(my_NOout_sd)[names(my_NOout_sd)=="Standard_Deviation"]<-"UTSW_Standard_Deviation"
+my_mean_sd<-merge(my_NOout_mean,my_NOout_sd,by="Measurement")
 
 compmean=calc_mean(comparisondf)
+#comp_out_mean<-boxplot(compmean$Mean, plot=FALSE)$out
+#comp_NOout_mean<-compmean[-which(compmean$Mean %in% comp_out_mean),]
 compsd=calc_sd(comparisondf)
+#comp_out_sd<-boxplot(compsd$Standard_Deviation, plot=FALSE)$out
+#comp_NOout_sd<-compsd[-which(compsd$Standard_Deviation %in% comp_out_sd),]
 names(compmean)[names(compmean)=="Mean"]<-"Broad_Mean"
 names(compsd)[names(compsd)=="Standard_Deviation"]<-"Broad_Standard_Deviation"
 comp_mean_sd<-merge(compmean,compsd,by="Measurement")
 
 merged<-merge(my_mean_sd,comp_mean_sd,by="Measurement")
+merged<-na.omit(merged)
 
 correlate<-function(input_file){
     mean_lm<-lm(Broad_Mean~UTSW_Mean,input_file)
@@ -74,7 +82,7 @@ correlate<-function(input_file){
 correl<-correlate(merged)
 
 #plotting the correlation results
-ggplot(merged, aes(x=UTSW_Mean,Broad_Mean)) + geom_point(colour="black") + geom_smooth(method='lm',formula=y~x, colour="black") + stat_poly_eq() + labs(title=paste0("Correlation between Broad and UTSW\nMean Feature Values")) + geom_abs_text(data=correl,mapping = aes(label = Mean_Slope),color="black",size=3.8,xpos=0.155,ypos=0.89)
+ggplot(merged, aes(x=UTSW_Mean,Broad_Mean)) + geom_point(colour="black") + geom_smooth(method='lm',formula=y~x, colour="black") + stat_poly_eq() + labs(title=paste0("Correlation between Broad and UTSW Mean Feature Values\nUTSW Outliers Removed")) + geom_abs_text(data=correl,mapping = aes(label = Mean_Slope),color="black",size=3.8,xpos=0.155,ypos=0.89)
 ggsave(paste0("MeanCorrelationAcross_",filegroup,"_Features.png"), type = "cairo")
 
 ggplot(merged,aes(UTSW_Standard_Deviation,Broad_Standard_Deviation)) + geom_point(colour="black") + geom_smooth(method='lm',formula=y~x,colour="black") + stat_poly_eq() + geom_abs_text(data=correl,mapping = aes(label = SD_Slope),color="black",size=3.8,xpos=0.143,ypos=0.89) + labs(title=paste0("Correlation of Standard Deviations between\nBroad and UTSW Feature Values"))
@@ -97,3 +105,35 @@ merg_dfs<-inner_join(x=origdf,y=compdf,by="Measurement")
 
 ggplot(merg_dfs) + stat_function(aes(x=Broad_Value,color="Broad"),fun=dnorm,args=list(mean=mean(merg_dfs$Broad_Value,na.rm=TRUE),sd=sd(merg_dfs$Broad_Value,na.rm=TRUE))) + stat_function(aes(x=UTSW_Value,color="UTSW"),fun=dnorm,args=list(mean=mean(merg_dfs$UTSW_Value,na.rm=TRUE),sd=sd(merg_dfs$UTSW_Value,na.rm=TRUE))) + ylab("") + xlab("") + theme(legend.position = 'bottom',legend.text = element_text(color='black',face='bold'),legend.title = element_text(color='black',face='bold')) + labs(color='Group',y='') + scale_color_manual(values=c('blue','black')) + labs(title=paste0("Distribution of All ",filegroup," Feature Values"))
 ggsave(paste0("BellCurveAcross_",filegroup,"_Features.png"), type = "cairo")
+
+
+
+producers <- data.frame(   
+    surname =  c("Spielberg","Scorsese","Hitchcock","Tarantino","Polanski"),    
+    nationality = c("US","US","UK","US","Poland"),    
+    stringsAsFactors=FALSE)
+
+# Create destination dataframe
+movies <- data.frame(    
+    surname = c("Spielberg",
+		"Scorsese",
+                "Hitchcock",
+              	"Hitchcock",
+                "Spielberg",
+                "Tarantino",
+                "Polanski",
+                "Fake",
+                "Fake"),    
+    title = c("Super 8",
+    		"Taxi Driver",
+    		"Psycho",
+    		"North by Northwest",
+    		"Catch Me If You Can",
+    		"Reservoir Dogs","Chinatown",
+            "This is a Fake Movie",
+            "This is a Second Fake Movie"),                
+     		stringsAsFactors=FALSE)
+
+# Merge two datasets
+m1 <- merge(producers, movies, by.x = "surname")
+m1
