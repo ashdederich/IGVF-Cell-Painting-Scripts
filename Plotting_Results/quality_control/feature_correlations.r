@@ -15,6 +15,8 @@ library(dplyr)
 datafile=fread(args[1])
 comparisondf=fread(args[2])
 filegroup=args[3]
+group1=args[4]
+group2=args[5]
 
 calc_mean<-function(input_file){
     #take mean and std of each column
@@ -49,8 +51,8 @@ calc_and_merge<-function(input_file,groupname){
     return(mean_sd)
 }
 
-my_mean_sd<-calc_and_merge(datafile)
-comp_mean_sd<-calc_and_merge(comparisondf)
+my_mean_sd<-calc_and_merge(datafile,group1)
+comp_mean_sd<-calc_and_merge(comparisondf,group2)
 merged<-merge(my_mean_sd,comp_mean_sd,by="Measurement")
 merged<-na.omit(merged)
 
