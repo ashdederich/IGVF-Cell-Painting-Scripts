@@ -57,7 +57,7 @@ merged<-merge(my_mean_sd,comp_mean_sd,by="Measurement")
 merged<-na.omit(merged)
 
 correlate<-function(input_file){
-    mean_lm<-lm(Broad_Mean~UTSW_Mean,input_file)
+    mean_lm<-lm(paste0(group2,"_Mean")~paste0(group1,"_Mean"),input_file)
     mean_lmcoef<-coef(mean_lm)
     mean_lmcoef<-data.frame(Mean_Slope=round(mean_lmcoef[[2]],3))
     mean_lmcoef$Mean_Slope<-paste0("Mean Slope=",mean_lmcoef$Mean_Slope)
@@ -67,14 +67,14 @@ correlate<-function(input_file){
     sd_lmcoef<-data.frame(SD_Slope=round(sd_lmcoef[[2]],3))
     sd_lmcoef$SD_Slope<-paste0("SD Slope=",sd_lmcoef$SD_Slope)
 
-    lmcoef=cbind(UTSW_Mean=1,Broad_Mean=1,UTSW_Standard_Deviation=1,Broad_Standard_Deviation=1,mean_lmcoef,sd_lmcoef)
+    lmcoef=cbind(paste0(group1,"_Mean")=1,paste0(group2,"_Mean")=1,UTSW_Standard_Deviation=1,Broad_Standard_Deviation=1,mean_lmcoef,sd_lmcoef)
     return(lmcoef)
 }
 
 correl<-correlate(merged)
 
 #plotting the correlation results
-ggplot(merged, aes(x=UTSW_Mean,Broad_Mean)) + geom_point(colour="black") + geom_smooth(method='lm',formula=y~x, colour="black") + stat_poly_eq() + labs(title=paste0("Correlation between Broad and UTSW Mean Feature Values\nUTSW Outliers Removed")) + geom_abs_text(data=correl,mapping = aes(label = Mean_Slope),color="black",size=3.8,xpos=0.155,ypos=0.89)
+ggplot(merged, aes(x=paste0(group1,"_Mean"),paste0(group2,"_Mean"))) + geom_point(colour="black") + geom_smooth(method='lm',formula=y~x, colour="black") + stat_poly_eq() + labs(title=paste0("Correlation between Broad and UTSW Mean Feature Values\nUTSW Outliers Removed")) + geom_abs_text(data=correl,mapping = aes(label = Mean_Slope),color="black",size=3.8,xpos=0.155,ypos=0.89)
 ggsave(paste0("MeanCorrelationAcross_",filegroup,"_Features.png"), type = "cairo")
 
 ggplot(merged,aes(UTSW_Standard_Deviation,Broad_Standard_Deviation)) + geom_point(colour="black") + geom_smooth(method='lm',formula=y~x,colour="black") + stat_poly_eq() + geom_abs_text(data=correl,mapping = aes(label = SD_Slope),color="black",size=3.8,xpos=0.143,ypos=0.89) + labs(title=paste0("Correlation of Standard Deviations between\nBroad and UTSW Feature Values"))
