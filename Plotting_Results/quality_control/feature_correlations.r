@@ -77,10 +77,10 @@ correlate<-function(input_file){
 correl<-correlate(merged)
 
 #plotting the correlation results
-ggplot(merged, aes(x=UTSW_Mean,Broad_Mean)) + geom_point(colour="black") + geom_smooth(method='lm',formula=y~x, colour="black") + labs(title=paste0("Correlation between Broad and UTSW Mean Feature Values\nUTSW Outliers Removed"),x=paste0(group1_name," Mean"), y=paste0(group2_name," Mean")) + geom_abs_text(data=correl,mapping = aes(label = Mean_Slope),color="black",size=3.8,xpos=0.155,ypos=0.89)
+ggplot(merged, aes(x=UTSW_Mean,Broad_Mean)) + geom_point(colour="black") + geom_smooth(method='lm',formula=y~x, colour="black") + labs(title=paste0("Correlation between", group1, " and", group2," Mean Feature Values"),x=paste0(group1_name," Mean"), y=paste0(group2_name," Mean")) + geom_abs_text(data=correl,mapping = aes(label = Mean_Slope),color="black",size=3.8,xpos=0.155,ypos=0.89)
 ggsave(paste0("MeanCorrelationAcross_",filegroup,"_Features.png"), type = "cairo")
 
-ggplot(merged,aes(UTSW_Standard_Deviation,Broad_Standard_Deviation)) + geom_point(colour="black") + geom_smooth(method='lm',formula=y~x,colour="black") + stat_poly_eq() + geom_abs_text(data=correl,mapping = aes(label = SD_Slope),color="black",size=3.8,xpos=0.143,ypos=0.89) + labs(title=paste0("Correlation of Standard Deviations between\nBroad and UTSW Feature Values"))
+ggplot(merged,aes(UTSW_Standard_Deviation,Broad_Standard_Deviation)) + geom_point(colour="black") + geom_smooth(method='lm',formula=y~x,colour="black") + stat_poly_eq() + geom_abs_text(data=correl,mapping = aes(label = SD_Slope),color="black",size=3.8,xpos=0.143,ypos=0.89) + labs(title=paste0("Correlation of Standard Deviations between",group1," and", group1," Feature Values"))
 ggsave(paste0("SDCorrelationAcross_",filegroup,"_Features.png"), type = "cairo")
 
 #plot bell curve of both data sets, too
