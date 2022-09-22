@@ -83,9 +83,9 @@ ggsave(paste0("CorrelationPlot_AllData_",filetype,".png"), type = "cairo",width=
 cmpd_lm<-dlply(df_all,"Metadata_broad_sample",function(df) lm(UTSW_Median~Broad_Median,data=df))
 cmpd_lm_coef<-ldply(cmpd_lm,coef)
 names(cmpd_lm_coef)[names(cmpd_lm_coef)=="Broad_Median"]<-"Slope"
-cmpd_lm_coef[,2]=c(1,2,3,4,5,6,7,8,9)
+cmpd_lm_coef[,2]=c(1:nrow(cmpd_lm_coef))
 names(cmpd_lm_coef)[names(cmpd_lm_coef)=="(Intercept)"]<-"UTSW_Median"
-cmpd_lm_coef=cbind(cmpd_lm_coef,Broad_Median=c(1,2,3,4,5,6,7,8,9))
+cmpd_lm_coef=cbind(cmpd_lm_coef,Broad_Median=c(1:nrow(cmpd_lm_coef)))
 cmpd_lm_coef[,3]=round(cmpd_lm_coef$Slope,3)
 cmpd_lm_coef$Slope<-ldply(paste0("Slope=",cmpd_lm_coef$Slope))
 colnames(cmpd_lm_coef[,3])<-"Slope"
