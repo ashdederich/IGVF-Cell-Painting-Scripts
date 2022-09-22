@@ -17,6 +17,7 @@ args=commandArgs(trailingOnly=TRUE)
 mydf=fread(args[1])
 comparisondf=args[2]
 filetype=args[3]
+cmpd_df<-fread(args[4])
 
 #getting metadata information for each file and merging with each respective dataframe
 #for utsw
@@ -32,24 +33,25 @@ mydf<-merge(utsw_platemap,mydf,by="Metadata_Well")
 names(mydf)[names(mydf)=="broad_sample"]<-"Metadata_broad_sample"
 
 #for broad
-broad_batchid=sub("\\../../","",dirname(comparisondf))
+#broad_batchid=sub("\\../../","",dirname(comparisondf))
 comparisondf=fread(comparisondf)
-broad_plateid=unique(comparisondf$Metadata_Plate)[1]
-broad_barcode=fread(paste0("../../../metadata/platemaps/",broad_batchid,"/barcode_platemap.csv"))
-broad_barcode=broad_barcode %>% filter(Assay_Plate_Barcode==broad_plateid) %>% pull(var=Plate_Map_Name)
-broad_platemap=fread(paste0("../../../metadata/platemaps/",broad_batchid,"/platemap/",broad_barcode,".txt"))
-names(broad_platemap)[names(broad_platemap)=="well_position"]<-"Metadata_Well"
-broad_platemap=broad_platemap[,1:2] #only get well_position and broad_sample information
-comparisondf<-merge(broad_platemap,comparisondf,by="Metadata_Well")
-names(comparisondf)[names(comparisondf)=="broad_sample"]<-"Metadata_broad_sample"
+#broad_plateid=unique(comparisondf$Metadata_Plate)[1]
+#broad_barcode=fread(paste0("../../../metadata/platemaps/",broad_batchid,"/barcode_platemap.csv"))
+#broad_barcode=broad_barcode %>% filter(Assay_Plate_Barcode==broad_plateid) %>% pull(var=Plate_Map_Name)
+#broad_platemap=fread(paste0("../../../metadata/platemaps/",broad_batchid,"/platemap/",broad_barcode,".txt"))
+#names(broad_platemap)[names(broad_platemap)=="well_position"]<-"Metadata_Well"
+#broad_platemap=broad_platemap[,1:2] #only get well_position and broad_sample information
+#comparisondf<-merge(broad_platemap,comparisondf,by="Metadata_Well")
+#names(comparisondf)[names(comparisondf)=="broad_sample"]<-"Metadata_broad_sample"
 
 #change data frames from short and wide to tall and skinny - My Data
 mydf_new<-mydf[,grep("Cells",colnames(mydf))[[1]]:ncol(mydf)]
 mydf_new<-cbind(mydf$Metadata_broad_sample,mydf_new)
 colnames(mydf_new)[1]<-"Metadata_broad_sample"
 mydf_new$Metadata_broad_sample[which(mydf_new$Metadata_broad_sample=="")]<-"DMSO"
-compounds=unique(mydf_new$Metadata_broad_sample)
-mydf_new<-melt(mydf_new)
+compounds=unique(cmpd_df$Metadata_broad_sample)
+mydf_subset=mydf_new[mydf_new$Metadata_broad_sample %in% compounds,]
+mydf_new<-melt(mydf_subset)
 names(mydf_new)[names(mydf_new)=="variable"]<-"Measurement"
 names(mydf_new)[names(mydf_new)=="value"]<-"UTSW_Median"
 
