@@ -33,16 +33,16 @@ mydf<-merge(utsw_platemap,mydf,by="Metadata_Well")
 names(mydf)[names(mydf)=="broad_sample"]<-"Metadata_broad_sample"
 
 #for broad
-#broad_batchid=sub("\\../../","",dirname(comparisondf))
+broad_batchid=sub("\\../../","",dirname(comparisondf))
 comparisondf=fread(comparisondf)
-#broad_plateid=unique(comparisondf$Metadata_Plate)[1]
-#broad_barcode=fread(paste0("../../../metadata/platemaps/",broad_batchid,"/barcode_platemap.csv"))
-#broad_barcode=broad_barcode %>% filter(Assay_Plate_Barcode==broad_plateid) %>% pull(var=Plate_Map_Name)
-#broad_platemap=fread(paste0("../../../metadata/platemaps/",broad_batchid,"/platemap/",broad_barcode,".txt"))
-#names(broad_platemap)[names(broad_platemap)=="well_position"]<-"Metadata_Well"
-#broad_platemap=broad_platemap[,1:2] #only get well_position and broad_sample information
-#comparisondf<-merge(broad_platemap,comparisondf,by="Metadata_Well")
-#names(comparisondf)[names(comparisondf)=="broad_sample"]<-"Metadata_broad_sample"
+broad_plateid=unique(comparisondf$Metadata_Plate)[1]
+broad_barcode=fread(paste0("../../../metadata/platemaps/",broad_batchid,"/barcode_platemap.csv"))
+broad_barcode=broad_barcode %>% filter(Assay_Plate_Barcode==broad_plateid) %>% pull(var=Plate_Map_Name)
+broad_platemap=fread(paste0("../../../metadata/platemaps/",broad_batchid,"/platemap/",broad_barcode,".txt"))
+names(broad_platemap)[names(broad_platemap)=="well_position"]<-"Metadata_Well"
+broad_platemap=broad_platemap[,1:2] #only get well_position and broad_sample information
+comparisondf<-merge(broad_platemap,comparisondf,by="Metadata_Well")
+names(comparisondf)[names(comparisondf)=="broad_sample"]<-"Metadata_broad_sample"
 
 #change data frames from short and wide to tall and skinny - My Data
 mydf_new<-mydf[,grep("Cells",colnames(mydf))[[1]]:ncol(mydf)]
