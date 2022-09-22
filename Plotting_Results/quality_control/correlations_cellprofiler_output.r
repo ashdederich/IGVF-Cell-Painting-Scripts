@@ -22,7 +22,7 @@ cmpd_df<-fread(args[4])
 #getting metadata information for each file and merging with each respective dataframe
 #for utsw
 wd=getwd()
-utsw_batchid=basename(dirname(wd))
+utsw_batchid=basename(wd)
 utsw_plateid=unique(mydf$Metadata_Plate)[[1]]
 utsw_barcode=fread(paste0("../../metadata/platemaps/",utsw_batchid,"/barcode_platemap.csv"))
 utsw_barcode=utsw_barcode %>% filter(Assay_Plate_Barcode==utsw_plateid) %>% pull(var=Plate_Map_Name)
@@ -33,7 +33,7 @@ mydf<-merge(utsw_platemap,mydf,by="Metadata_Well")
 names(mydf)[names(mydf)=="broad_sample"]<-"Metadata_broad_sample"
 
 #for broad
-broad_batchid=sub("\\../../","",dirname(comparisondf))
+broad_batchid=basename(dirname(comparisondf))
 comparisondf=fread(comparisondf)
 broad_plateid=unique(comparisondf$Metadata_Plate)[1]
 broad_barcode=fread(paste0("../../metadata/platemaps/",broad_batchid,"/barcode_platemap.csv"))
