@@ -73,7 +73,7 @@ df_all_lmcoef$Slope<-paste0("Slope=",df_all_lmcoef$Slope)
 df_all_lmcoef=cbind(UTSW_Median=1,Broad_Median=1,df_all_lmcoef)
 
 #creating correlation plot
-ggplot(df_all, aes(x=UTSW_Median,Broad_Median)) + geom_point(colour="black") + geom_smooth(method='lm',formula=y~x,color="black") + stat_regline_equation(aes(label = ..rr.label..)) + labs(title=paste0("Correlation between Broad Data Set and UTSW\nAfter PyCytominer Using the ",filetype," File")) + geom_abs_text(data=df_all_lmcoef,mapping = aes(label = Slope),color="black",size=3.8,xpos=0.08,ypos=0.88)
+ggplot(df_all, aes(x=UTSW_Median,Broad_Median)) + geom_point(colour="black") + geom_smooth(method='lm',formula=y~x,color="black") + stat_regline_equation(aes(label = ..rr.label..)) + labs(title=paste0("Correlation between Broad Data Set and UTSW\nUsing the ",filetype," File")) + geom_abs_text(data=df_all_lmcoef,mapping = aes(label = Slope),color="black",size=3.8,xpos=0.08,ypos=0.88)
 ggsave(paste0("CorrelationPlot_AllData_",filetype,".png"), type = "cairo",width=10,height=7)
 
 #summarizing by compound
@@ -88,5 +88,5 @@ cmpd_lm_coef[,3]=round(cmpd_lm_coef$Slope,3)
 cmpd_lm_coef$Slope<-ldply(paste0("Slope=",cmpd_lm_coef$Slope))
 colnames(cmpd_lm_coef[,3])<-"Slope"
 
-ggplot(df_all, aes(x=UTSW_Median,y=Broad_Median,group=Metadata_broad_sample,color=Metadata_broad_sample)) + geom_point() + geom_smooth(method='lm',formula=y~x) + facet_wrap(~Metadata_broad_sample,scales="free") + labs(title=paste0("Correlation between Broad Data Set and Ours\nAfter PyCytominer Using the ",filetype," File")) + stat_poly_eq(label.x="left",label.y="top",size=2.5,color="black") + theme(strip.text = element_text(size = 6.2),axis.text=element_text(size=5)) + geom_abs_text(data=cmpd_lm_coef,mapping = aes(label = Slope),color="black",size=2.5,xpos=0.7,ypos=0.18)
+ggplot(df_all, aes(x=UTSW_Median,y=Broad_Median,group=Metadata_broad_sample,color=Metadata_broad_sample)) + geom_point() + geom_smooth(method='lm',formula=y~x) + facet_wrap(~Metadata_broad_sample,scales="free") + labs(title=paste0("Correlation between Broad Data Set and Ours\nUsing the ",filetype," File")) + stat_poly_eq(label.x="left",label.y="top",size=2.5,color="black") + theme(strip.text = element_text(size = 6.2),axis.text=element_text(size=5)) + geom_abs_text(data=cmpd_lm_coef,mapping = aes(label = Slope),color="black",size=2.5,xpos=0.7,ypos=0.18)
 ggsave(paste0("CorrelationPlot_ByCmpd_",filetype,".png"), type = "cairo")
