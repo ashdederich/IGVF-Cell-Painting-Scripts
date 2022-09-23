@@ -19,6 +19,14 @@ comparisondf=args[2]
 filetype=args[3]
 cmpd_df<-fread(args[4])
 
+#take cmpd_df, melt it, and get a list of the measurements kept
+cmpd_df_new<-cmpd_df[,grep("Cells",colnames(cmpd_df))[[1]]:ncol(cmpd_df)]
+cmpd_df_new<-cbind(cmpd_df$Metadata_broad_sample,cmpd_df_new)
+colnames(cmpd_df_new)[1]<-"Metadata_broad_sample"
+cmpd_df_new$Metadata_broad_sample[which(cmpd_df_new$Metadata_broad_sample=="")]<-"DMSO"
+cmpd_df_new<-melt(cmpd_df_new)
+cmpd_meas<-as.character(unique(cmpd_df_new$variable))
+
 #getting metadata information for each file and merging with each respective dataframe
 #for utsw
 wd=getwd()
@@ -49,21 +57,23 @@ mydf_new<-mydf[,grep("Cells",colnames(mydf))[[1]]:ncol(mydf)]
 mydf_new<-cbind(mydf$Metadata_broad_sample,mydf_new)
 colnames(mydf_new)[1]<-"Metadata_broad_sample"
 mydf_new$Metadata_broad_sample[which(mydf_new$Metadata_broad_sample=="")]<-"DMSO"
-compounds=unique(cmpd_df$Metadata_broad_sample)
-mydf_subset=mydf_new[mydf_new$Metadata_broad_sample %in% compounds,]
+compounds=unique(cmpd_df$Metadata_broad_sample) 
+mydf_subset=mydf_new[mydf_new$Metadata_broad_sample %in% compounds,] # only get JUMP cmpds
 mydf_new<-melt(mydf_subset)
 names(mydf_new)[names(mydf_new)=="variable"]<-"Measurement"
 names(mydf_new)[names(mydf_new)=="value"]<-"UTSW_Median"
+mydf_new=mydf_new[mydf_new$Measurement %in% cmpd_meas,] #only get measurements that pycytominer selected as variable
 
 #change data frames from short and wide to tall and skinny - Broad Data
 comparisondf_new<-comparisondf[,grep("Cells",colnames(comparisondf))[[1]]:ncol(comparisondf)]
 comparisondf_new<-cbind(comparisondf$Metadata_broad_sample,comparisondf_new)
 colnames(comparisondf_new)[1]<-"Metadata_broad_sample"
 comparisondf_new$Metadata_broad_sample[which(comparisondf_new$Metadata_broad_sample=="")]<-"DMSO"
-comparisondf_subset=comparisondf_new[comparisondf_new$Metadata_broad_sample %in% compounds,]
+comparisondf_subset=comparisondf_new[comparisondf_new$Metadata_broad_sample %in% compounds,] # only get JUMP cmpds
 comparisondf_new<-melt(comparisondf_subset)
 names(comparisondf_new)[names(comparisondf_new)=="variable"]<-"Measurement"
 names(comparisondf_new)[names(comparisondf_new)=="value"]<-"Broad_Median"
+comparisondf_new=comparisondf_new[comparisondf_new$Measurement %in% cmpd_meas,]
 
 #merge data sheets by type
 df_all<-inner_join(x=mydf_new,y=comparisondf_new,by=c("Metadata_broad_sample","Measurement"))
