@@ -18,9 +18,7 @@ filetype=args[5]
 reshape_files<-function(a_file){
     data<-fread(a_file)
     data_new=data[,grep("Cells",colnames(data))[[1]]:ncol(data)]
-    data_new<-cbind(data$Metadata_Plate,data$Metadata_Well,data_new)
-    colnames(data_new)[1]<-"Metadata_Plate"
-    colnames(data_new)[2]<-"Metadata_Well"
+    data_new<-cbind(Metadata_Plate=data$Metadata_Plate,Metadata_Well=data$Metadata_Well,data_new)
     data_melt<-melt(data_new)
     names(data_melt)[names(data_melt)=="variable"]<-"Measurement"
     names(data_melt)[names(data_melt)=="value"]<-"Median"

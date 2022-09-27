@@ -18,9 +18,7 @@ filetype=args[5]
 reshape_files<-function(a_file){
     data<-fread(a_file)
     data_new=data[,grep("Cells",colnames(data))[[1]]:ncol(data)]
-    data_new<-cbind(data$Metadata_broad_sample,data$Metadata_Plate,data_new)
-    colnames(data_new)[1]<-"Metadata_broad_sample"
-    colnames(data_new)[2]<-"Metadata_Plate"
+    data_new<-cbind(Metadata_broad_sample=data$Metadata_broad_sample,Metadata_pert_iname=data$Metadata_pert_iname,Metadata_Plate=data$Metadata_Plate,Metadata_Well=data$Metadata_Well,data_new)
     data_new$Metadata_broad_sample[which(data_new$Metadata_broad_sample=="")]<-"DMSO"
     data_melt<-melt(data_new)
     names(data_melt)[names(data_melt)=="variable"]<-"Measurement"
@@ -36,7 +34,7 @@ bind_and_cast<-function(file1,file2,file3,file4){
 
     #rbind the files together into one, cast it, and write is as a csv file
     binded<-rbind(reshaped[[1]],reshaped[[2]],reshaped[[3]],reshaped[[4]])
-    binded_cast<-cast(binded,Metadata_Plate+Metadata_broad_sample~Measurement,value="Median",fun.aggregate=sum)
+    binded_cast<-cast(binded,Metadata_Plate+Metadata_broad_sample+Metadata_pert_iname+Metadata_Well~Measurement,value="Median",fun.aggregate=sum)
     write.csv(binded_cast,paste0(filetype,"_merged.csv"),row.names = FALSE)
 }
 
