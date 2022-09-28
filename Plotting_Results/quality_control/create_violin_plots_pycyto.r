@@ -79,4 +79,4 @@ df_cor_all<-rbind(df_cor_melt,df_cor_rand_melt)
 quantile_randomized<-quantile(df_cor_all$Correlation[which(df_cor_all$fake=="Randomized")],0.95,na.rm=TRUE)
 quantile_randomized=quantile_randomized[[1]]
 ggplot(df_cor_all,aes(factor(fake),Correlation)) + geom_violin(scale='width') + theme(axis.text.x=element_text(angle=45,hjust=1)) + ggtitle(paste0(filetype,"\nReplicate Correlations")) +xlab("Comparison Group") + ylab("Correlation Value") + geom_hline(yintercept=quantile_randomized, color='red',linetype='dashed')
-ggsave(paste0(plateid,"_",filetype,"_","violin_plot.pdf"))
+ggsave(paste0(plateid,"_",filetype,"_","violin_plot.png"), type = "cairo")
