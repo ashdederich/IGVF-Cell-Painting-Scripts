@@ -26,6 +26,7 @@ merge_files<-function(file1,file2,file3){
     merged<-merge(reshaped[[1]],reshaped[[2]],by=c("Metadata_Plate","Metadata_Well"),all.x=TRUE,all.y=TRUE)
     merged1<-merge(merged,reshaped[[3]],by=c("Metadata_Plate","Metadata_Well"),all.x=TRUE,all.y=TRUE)
     platename<-unique(merged1$Metadata_Plate)
+    platename<-gsub('/','',platename)
     write.csv(merged1,paste0(platename,".csv"),row.names = FALSE)
 }
 
