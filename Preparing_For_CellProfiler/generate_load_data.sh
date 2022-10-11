@@ -33,7 +33,7 @@ cell_locations="ER AGP Mito DNA"
 
 for location in $(echo $cell_locations); do linecount=$(cat FileName_Orig${location}.txt | wc -l); for i in $(cat pwd.txt); do seq 1 ${linecount} | xargs -i -- echo $i > ${location}_pwd.txt; done; for j in $(echo ${plate}); do seq 1 ${linecount} | xargs -i -- echo $j > metadata_plate.txt; done; done	
 
-letter_to_number.r metadata_row.txt
+./letter_to_number.r metadata_row.txt
 
 echo FileName_OrigER,PathName_OrigER,FileName_OrigAGP,PathName_OrigAGP,FileName_OrigMito,PathName_OrigMito,FileName_OrigDNA,PathName_OrigDNA,Metadata_Plate,Metadata_Well,Metadata_Site,Metadata_Col,Metadata_Row > load_data.csv 
 

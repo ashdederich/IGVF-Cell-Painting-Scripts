@@ -2,8 +2,9 @@
 
 dir=$1
 loaddata=$2
-platename="$(basename $dir)"
 cd ${dir}
+
+platename=$(cat ../platename.txt)
 
 echo *AGP* > illumAGP.txt
 echo *DNA* > illumDNA.txt
@@ -15,7 +16,9 @@ cp ../${loaddata} .
 
 linecount=$(awk 'END { print NR -1 }' load_data.csv)
 
-for location in $(cat ../cell_locations.txt); do for i in $(cat illum${location}.txt); do seq 1 ${linecount} | xargs -i -- echo $i > filename_illum${location}.txt; done; done
+cell_locations="ER AGP Mito DNA"
+
+for location in $(echo $cell_locations); do for i in $(cat illum${location}.txt); do seq 1 ${linecount} | xargs -i -- echo $i > filename_illum${location}.txt; done; done
 
 for i in $(cat pwd.txt); do seq 1 ${linecount} | xargs -i -- echo $i > ${platename}_pwd.txt; done
 
