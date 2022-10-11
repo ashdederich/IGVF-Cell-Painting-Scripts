@@ -20,15 +20,14 @@ filetype=args[3]
 filetype_sp<-gsub("-", " ", filetype, fixed=TRUE)
 cmpd_df<-fread(args[4])
 comp1<-args[5]
-comp1<-gsub("_"," ", comp1,fixed=TRUE)
+comp1<-gsub("-"," ", comp1,fixed=TRUE)
 comp2<-args[6]
-comp2<-gsub("_"," ", comp2,fixed=TRUE)
+comp2<-gsub("-"," ", comp2,fixed=TRUE)
 
 #take cmpd_df, melt it, and get a list of the measurements kept
 cmpd_df_new<-cmpd_df[,grep("Cells",colnames(cmpd_df))[[1]]:ncol(cmpd_df)]
 cmpd_df_new<-cbind(Metadata_pert_iname=cmpd_df$Metadata_pert_iname,Metadata_Well=cmpd_df$Metadata_Well,cmpd_df_new)
 cmpd_df_new<-melt(cmpd_df_new,id.vars=c("Metadata_pert_iname","Metadata_Well"))
-cmpd_df_new<-data.frame(Metadata_pert_name=cmpd_df_new$Metadata_pert_iname,Metadata_Well=cmpd_df_new$Metadata_Well)
 cmpd_df_new<-cmpd_df_new[!duplicated(cmpd_df_new),]
 cmpd_meas<-as.character(unique(cmpd_df_new$variable))
 compounds=unique(cmpd_df$Metadata_pert_iname) 
@@ -51,9 +50,9 @@ mydf=inner_join(cmpd_df_new,mydf,by="Metadata_Well")
 broad_batchid=basename(dirname(comparisondf))
 comparisondf=fread(comparisondf)
 broad_plateid=unique(comparisondf$Metadata_Plate)[1]
-broad_barcode=fread(paste0("../../../metadata/platemaps/",broad_batchid,"/barcode_platemap.csv"))
+broad_barcode=fread(paste0("../../metadata/platemaps/",broad_batchid,"/barcode_platemap.csv"))
 broad_barcode=broad_barcode %>% filter(Assay_Plate_Barcode==broad_plateid) %>% pull(var=Plate_Map_Name)
-broad_platemap=fread(paste0("../../../metadata/platemaps/",broad_batchid,"/platemap/",broad_barcode,".txt"))
+broad_platemap=fread(paste0("../../metadata/platemaps/",broad_batchid,"/platemap/",broad_barcode,".txt"))
 names(broad_platemap)[names(broad_platemap)=="well_position"]<-"Metadata_Well"
 broad_platemap=broad_platemap[,1:2] #only get well_position and broad_sample information
 comparisondf<-merge(broad_platemap,comparisondf,by="Metadata_Well")
