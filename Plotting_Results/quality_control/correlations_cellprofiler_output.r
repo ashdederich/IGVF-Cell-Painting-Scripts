@@ -14,23 +14,46 @@ library(dplyr)
 args=commandArgs(trailingOnly=TRUE)
 
 #read in the data frames
-mydf=fread(args[1])
+mydf=args[1]
 comparisondf=args[2]
-filetype=args[3]
-filetype_sp<-gsub("-", " ", filetype, fixed=TRUE)
-cmpd_df<-fread(args[4])
-comp1<-args[5]
+metadata=fread(args[3])
+filetype=args[5]
+comp1<-args[6]
+comp2<-args[7]
+
+#set up title and measurements files to detect feature-summarized or negcon summarized
+mydf_meas<-sub("\\.csv.gz.*","",mydf)
+compdf_meas<-sub("\\.csv.gz.*","",comparisondf)
+
+if(grepl("feature",filetype,fixed=TRUE)==TRUE){
+    title="CP-Output-Feature-Normalized"
+    mydf_meas_file=paste0(mydf_meas,"_normalized_feature_select_batch.csv.gz")
+    compdf_meas_file=paste0(compdf_meas,"_normalized_feature_select_batch.csv.gz")
+} else if (grepl("negcon",filetype,fixed=TRUE)==TRUE){
+    title="CP-Output-NegCon-Normalized"
+    mydf_meas_file=paste0(mydf_meas,"_normalized_feature_select_negcon_batch.csv.gz")
+    compdf_meas_file=paste0(compdf_meas,"_normalized_feature_select_negcon_batch.csv.gz")
+}
+
+title_sp<-gsub("-", " ", title, fixed=TRUE)
 comp1<-gsub("-"," ", comp1,fixed=TRUE)
-comp2<-args[6]
 comp2<-gsub("-"," ", comp2,fixed=TRUE)
 
-#take cmpd_df, melt it, and get a list of the measurements kept
-cmpd_df_new<-cmpd_df[,grep("Cells",colnames(cmpd_df))[[1]]:ncol(cmpd_df)]
-cmpd_df_new<-cbind(Metadata_pert_iname=cmpd_df$Metadata_pert_iname,Metadata_Well=cmpd_df$Metadata_Well,cmpd_df_new)
-cmpd_df_new<-melt(cmpd_df_new,id.vars=c("Metadata_pert_iname","Metadata_Well"))
-cmpd_df_new<-cmpd_df_new[!duplicated(cmpd_df_new),]
-cmpd_meas<-as.character(unique(cmpd_df_new$variable))
-compounds=unique(cmpd_df$Metadata_pert_iname) 
+#getting intersection of features
+
+intersection<-function(file){
+    df<-fread(file)
+    df_new<-df[,grep("Cells",colnames(df))[[1]]:ncol(df)]
+    df<-cbind(Metadata_pert_iname=df$Metadata_pert_iname,df_new)
+    df_melt<-melt(df)
+    df_feat<-df_melt$variable
+    return(df_feat)
+}
+
+mydf_feat<-intersection(mydf_meas_file)
+comp_feat<-intersection(compdf_meas_file)
+features<-intersect(mydf_feat,comp_feat)
+compounds<-c("NVS-PAK1-1","aloxistatin","FK-866","AMG900","LY2109761","dexamethasone","quinidine","TC-S-7004","DMSO")
 
 #getting metadata information for each file and merging with each respective dataframe
 #for utsw
@@ -44,10 +67,11 @@ compounds=unique(cmpd_df$Metadata_pert_iname)
 #utsw_platemap=utsw_platemap[,1:3] #only get well_position and broad_sample information
 #mydf<-merge(utsw_platemap,mydf,by="Metadata_Well")
 #names(mydf)[names(mydf)=="broad_sample"]<-"Metadata_pert_iname"
-mydf=inner_join(cmpd_df_new,mydf,by="Metadata_Well")
+#cmpd_pert_well<-data.frame(Metadata_pert_iname=cmpd_df_new$Metadata_pert_iname,Metadata_Well=cmpd_df_new$Metadata_Well)
+#mydf=inner_join(cmpd_pert_well,mydf,by="Metadata_Well")
 
-#for broad
-broad_batchid=basename(dirname(comparisondf))
+#getting metadata for broad
+broad_batchid=basename(dirname(dirname(comparisondf)))
 comparisondf=fread(comparisondf)
 broad_plateid=unique(comparisondf$Metadata_Plate)[1]
 broad_barcode=fread(paste0("../../metadata/platemaps/",broad_batchid,"/barcode_platemap.csv"))
@@ -55,33 +79,32 @@ broad_barcode=broad_barcode %>% filter(Assay_Plate_Barcode==broad_plateid) %>% p
 broad_platemap=fread(paste0("../../metadata/platemaps/",broad_batchid,"/platemap/",broad_barcode,".txt"))
 names(broad_platemap)[names(broad_platemap)=="well_position"]<-"Metadata_Well"
 broad_platemap=broad_platemap[,1:2] #only get well_position and broad_sample information
-comparisondf<-merge(broad_platemap,comparisondf,by="Metadata_Well")
-names(comparisondf)[names(comparisondf)=="broad_sample"]<-"Metadata_pert_iname"
+broad_metadata=inner_join(broad_platemap,metadata,by="broad_sample")
+broad_metadata=data.frame(Metadata_Well=broad_metadata$Metadata_Well,Metadata_pert_iname=broad_metadata$pert_iname,Metadata_broad_sample=broad_metadata$broad_sample)
+comparisondf<-merge(broad_metadata,comparisondf,by="Metadata_Well")
 
 #change data frames from short and wide to tall and skinny - My Data
-mydf_new<-mydf[,grep("Cells",colnames(mydf))[[1]]:ncol(mydf)]
-mydf_new<-cbind(mydf$Metadata_pert_iname,mydf_new)
-colnames(mydf_new)[1]<-"Metadata_pert_iname"
-mydf_new$Metadata_pert_iname[which(mydf_new$Metadata_pert_iname=="")]<-"DMSO"
-mydf_subset=mydf_new[mydf_new$Metadata_pert_iname %in% compounds,] # only get JUMP cmpds
-mydf_new<-melt(mydf_subset)
-names(mydf_new)[names(mydf_new)=="variable"]<-"Measurement"
-names(mydf_new)[names(mydf_new)=="value"]<-"UTSW_Median"
-mydf_new=mydf_new[mydf_new$Measurement %in% cmpd_meas,] #only get measurements that pycytominer selected as variable
+mydf=fread(mydf)
+plateid=unique(mydf$Metadata_Plate)
+mydf_new=merge(broad_metadata,mydf,by="Metadata_Well")
 
-#change data frames from short and wide to tall and skinny - Broad Data
-comparisondf_new<-comparisondf[,grep("Cells",colnames(comparisondf))[[1]]:ncol(comparisondf)]
-comparisondf_new<-cbind(comparisondf$Metadata_pert_iname,comparisondf_new)
-colnames(comparisondf_new)[1]<-"Metadata_pert_iname"
-comparisondf_new$Metadata_pert_iname[which(comparisondf_new$Metadata_pert_iname=="")]<-"DMSO"
-comparisondf_subset=comparisondf_new[comparisondf_new$Metadata_pert_iname %in% compounds,] # only get JUMP cmpds
-comparisondf_new<-melt(comparisondf_subset)
-names(comparisondf_new)[names(comparisondf_new)=="variable"]<-"Measurement"
-names(comparisondf_new)[names(comparisondf_new)=="value"]<-"Broad_Median"
-comparisondf_new=comparisondf_new[comparisondf_new$Measurement %in% cmpd_meas,]
+subset_and_melt<-function(df,compounds=compounds,features=features){
+    df$Metadata_broad_sample[which(df$Metadata_pert_iname=="")]<-"DMSO"
+    df_subset=df[df$Metadata_pert_iname %in% compounds,] # only get JUMP cmpds
+    df_melt<-melt(df_subset)
+    names(df_melt)[names(df_melt)=="variable"]<-"Measurement"
+    names(df_melt)[names(df_melt)=="value"]<-"Median"
+    df_melt=df_melt[df_melt$Measurement %in% features,] #only get measurements that pycytominer selected as variable
+    return(df_melt)
+}
+
+mydf_formerge<-subset_and_melt(mydf_new)
+names(mydf_formerge)[names(mydf_formerge)=="Median"]<-"UTSW_Median"
+compdf_formerge<-subset_and_melt(comparisondf)
+names(compdf_formerge)[names(compdf_formerge)=="Median"]<-"Broad_Median"
 
 #merge data sheets by type
-df_all<-inner_join(x=mydf_new,y=comparisondf_new,by=c("Metadata_pert_iname","Measurement"))
+df_all<-inner_join(x=mydf_formerge,y=compdf_formerge,by=c("Metadata_pert_iname","Measurement"))
 #calculate the slope and add to the plot
 df_all_lm<-lm(UTSW_Median~Broad_Median,df_all)
 df_all_lmcoef<-coef(df_all_lm)
@@ -90,8 +113,8 @@ df_all_lmcoef$Slope<-paste0("Slope=",df_all_lmcoef$Slope)
 df_all_lmcoef=cbind(UTSW_Median=1,Broad_Median=1,df_all_lmcoef)
 
 #creating correlation plot
-ggplot(df_all, aes(x=UTSW_Median,Broad_Median)) + geom_point(colour="black") + geom_smooth(method='lm',formula=y~x,color="black") + stat_regline_equation(aes(label = ..rr.label..)) + labs(title=paste0("Correlation between Broad Data Set and UTSW Using the\n",filetype_sp," File"),x=paste0(comp1," Median"), y=paste0(comp2," Median")) + geom_abs_text(data=df_all_lmcoef,mapping = aes(label = Slope),color="black",size=3.8,xpos=0.08,ypos=0.88)
-ggsave(paste0("CorrelationPlot_AllData_",filetype,".png"), type = "cairo",width=10,height=7)
+ggplot(df_all, aes(x=UTSW_Median,Broad_Median)) + geom_point(colour="black") + geom_smooth(method='lm',formula=y~x,color="black") + stat_regline_equation(aes(label = ..rr.label..)) + labs(title=paste0("Correlation between Broad Data Set and UTSW Using the\n",title_sp," File\nPlate ", plateid),x=paste0(comp1," Median"), y=paste0(comp2," Median")) + geom_abs_text(data=df_all_lmcoef,mapping = aes(label = Slope),color="black",size=3.8,xpos=0.08,ypos=0.84)
+ggsave(paste0("CorrelationAllData_",plateid,"_",title,".png"), type = "cairo",width=10,height=7)
 
 #summarizing by compound
 #calculate lm for each broad sample
@@ -105,5 +128,5 @@ cmpd_lm_coef[,3]=round(cmpd_lm_coef$Slope,3)
 cmpd_lm_coef$Slope<-ldply(paste0("Slope=",cmpd_lm_coef$Slope))
 colnames(cmpd_lm_coef[,3])<-"Slope"
 
-ggplot(df_all, aes(x=UTSW_Median,y=Broad_Median,group=Metadata_pert_iname,color=Metadata_pert_iname)) + geom_point() + geom_smooth(method='lm',formula=y~x) + facet_wrap(~Metadata_pert_iname,scales="free") + labs(title=paste0("Correlation between Broad Data Set and Ours Using the\n",filetype_sp," File"),x=paste0(comp1," Median"), y=paste0(comp2," Median")) + stat_poly_eq(label.x="left",label.y="top",size=2.5,color="black") + theme(strip.text = element_text(size = 6.2),axis.text=element_text(size=5)) + geom_abs_text(data=cmpd_lm_coef,mapping = aes(label = Slope),color="black",size=2.5,xpos=0.7,ypos=0.18)
-ggsave(paste0("CorrelationPlot_ByCmpd_",filetype,".png"), type = "cairo")
+ggplot(df_all, aes(x=UTSW_Median,y=Broad_Median,group=Metadata_pert_iname,color=Metadata_pert_iname)) + geom_point() + geom_smooth(method='lm',formula=y~x) + facet_wrap(~Metadata_pert_iname,scales="free") + labs(title=paste0("Correlation between Broad Data Set and Ours Using the\n",title_sp," File\nPlate ", plateid),x=paste0(comp1," Median"), y=paste0(comp2," Median")) + stat_poly_eq(label.x="left",label.y="top",size=2.5,color="black") + theme(strip.text = element_text(size = 6.2),axis.text=element_text(size=5)) + geom_abs_text(data=cmpd_lm_coef,mapping = aes(label = Slope),color="black",size=2.5,xpos=0.7,ypos=0.18)
+ggsave(paste0("CorrelationPlot_ByCmpd_",title,".png"), type = "cairo")
