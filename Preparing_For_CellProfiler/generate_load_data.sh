@@ -24,16 +24,16 @@ cat FileName_OrigDNA.txt | awk '{print substr($0,5,2)}' > metadata_col.txt
 cat FileName_OrigDNA.txt | awk '{print substr($0,1,1)}' > metadata_row.txt
 cat FileName_OrigDNA.txt | awk '{print substr($0,1,6)}' | sed 's/_-_//g' > metadata_well.txt
 
-pwd > pwd.txt
+pwd=$(cat ${plate}_pwd.txt)
 
 count=$(expr $(cat FileName_OrigDNA.txt | wc -l) / 9)
 for (( c=1; c<=$count; c++)); do seq 9 >> metadata_site.txt; done
 
 cell_locations="ER AGP Mito DNA"
 
-for location in $(echo $cell_locations); do linecount=$(cat FileName_Orig${location}.txt | wc -l); for i in $(cat pwd.txt); do seq 1 ${linecount} | xargs -i -- echo $i > ${location}_pwd.txt; done; for j in $(echo ${plate}); do seq 1 ${linecount} | xargs -i -- echo $j > metadata_plate.txt; done; done	
+for location in $(echo $cell_locations); do linecount=$(cat FileName_Orig${location}.txt | wc -l); for i in $(echo $pwd); do seq 1 ${linecount} | xargs -i -- echo $i > ${location}_pwd.txt; done; for j in $(echo ${plate}); do seq 1 ${linecount} | xargs -i -- echo $j > metadata_plate.txt; done; done	
 
-./letter_to_number.r metadata_row.txt
+letter_to_number.r metadata_row.txt
 
 echo FileName_OrigER,PathName_OrigER,FileName_OrigAGP,PathName_OrigAGP,FileName_OrigMito,PathName_OrigMito,FileName_OrigDNA,PathName_OrigDNA,Metadata_Plate,Metadata_Well,Metadata_Site,Metadata_Col,Metadata_Row > load_data.csv 
 

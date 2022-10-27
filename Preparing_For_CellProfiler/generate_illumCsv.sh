@@ -2,6 +2,7 @@
 
 dir=$1
 loaddata=$2
+cp ${loaddata} ${dir}
 cd ${dir}
 
 platename=$(cat ../platename.txt)
@@ -12,9 +13,8 @@ echo *ER* > illumER.txt
 echo *Mito* > illumMito.txt
 
 pwd > pwd.txt
-cp ../${loaddata} .
 
-linecount=$(awk 'END { print NR -1 }' load_data.csv)
+linecount=$(awk 'END { print NR -1 }' ${platename}_load_data.csv)
 
 cell_locations="ER AGP Mito DNA"
 
@@ -26,7 +26,7 @@ echo FileName_IllumER,PathName_IllumER,FileName_IllumAGP,PathName_IllumAGP,FileN
 
 paste -d, filename_illumER.txt ${platename}_pwd.txt filename_illumAGP.txt ${platename}_pwd.txt filename_illumMito.txt ${platename}_pwd.txt filename_illumDNA.txt ${platename}_pwd.txt >> temp.csv
 
-paste -d, load_data.csv temp.csv > load_data_with_illum.csv
+paste -d, ${platename}_load_data.csv temp.csv > ${platename}_load_data_with_illum.csv
 
 rm *.txt temp.csv
 cd ..
