@@ -41,7 +41,7 @@ comp2<-gsub("-"," ", comp2,fixed=TRUE)
 
 #getting intersection of features
 
-intersection<-function(file){
+reshape_data<-function(file){
     df<-fread(file)
     df_new<-df[,grep("Cells",colnames(df))[[1]]:ncol(df)]
     df<-cbind(Metadata_pert_iname=df$Metadata_pert_iname,df_new)
@@ -50,8 +50,8 @@ intersection<-function(file){
     return(df_feat)
 }
 
-mydf_feat<-intersection(mydf_meas_file)
-comp_feat<-intersection(compdf_meas_file)
+mydf_feat<-reshape_data(mydf_meas_file)
+comp_feat<-reshape_data(compdf_meas_file)
 features<-intersect(mydf_feat,comp_feat)
 compounds<-c("NVS-PAK1-1","aloxistatin","FK-866","AMG900","LY2109761","dexamethasone","quinidine","TC-S-7004","DMSO")
 
