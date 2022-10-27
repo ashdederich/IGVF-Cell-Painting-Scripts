@@ -98,9 +98,9 @@ subset_and_melt<-function(df,compounds=compounds,features=features){
     return(df_melt)
 }
 
-mydf_formerge<-subset_and_melt(mydf_new)
+mydf_formerge<-subset_and_melt(mydf_new,compounds,features)
 names(mydf_formerge)[names(mydf_formerge)=="Median"]<-"UTSW_Median"
-compdf_formerge<-subset_and_melt(comparisondf)
+compdf_formerge<-subset_and_melt(comparisondf,compounds,features)
 names(compdf_formerge)[names(compdf_formerge)=="Median"]<-"Broad_Median"
 
 #merge data sheets by type
