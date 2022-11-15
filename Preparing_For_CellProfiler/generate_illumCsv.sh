@@ -14,7 +14,7 @@ echo *Mito* > illumMito.txt
 
 pwd > pwd.txt
 
-linecount=$(awk 'END { print NR -1 }' ${platename}_load_data.csv)
+linecount=$(awk 'END { print NR -1 }' ${loaddata})
 
 cell_locations="ER AGP Mito DNA"
 
