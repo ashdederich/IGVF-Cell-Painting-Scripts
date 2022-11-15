@@ -5,7 +5,7 @@ loaddata=$2
 cp ${loaddata} ${dir}
 cd ${dir}
 
-platename=$(cat ../platename.txt)
+platename=$(awk -F "," '{ print $9 }' ${loaddata} | sed -n '2p')
 
 echo *AGP* > illumAGP.txt
 echo *DNA* > illumDNA.txt
