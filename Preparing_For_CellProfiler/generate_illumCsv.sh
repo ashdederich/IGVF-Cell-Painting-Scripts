@@ -2,10 +2,11 @@
 
 dir=$1
 loaddata=$2
-cp ${loaddata} ${dir}
-cd ${dir}
 
 platename=$(awk -F "," '{ print $9 }' ${loaddata} | sed -n '2p')
+cp ${loaddata} ${dir}/${platename}_load_data.csv
+
+cd ${dir}
 
 echo *AGP* > illumAGP.txt
 echo *DNA* > illumDNA.txt
@@ -14,7 +15,7 @@ echo *Mito* > illumMito.txt
 
 pwd > pwd.txt
 
-linecount=$(awk 'END { print NR -1 }' ${loaddata})
+linecount=$(awk 'END { print NR -1 }' ${platename}_load_data.csv)
 
 cell_locations="ER AGP Mito DNA"
 
