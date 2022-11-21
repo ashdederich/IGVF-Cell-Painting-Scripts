@@ -3,6 +3,7 @@
 
 library(data.table)
 library(reshape)
+library(R.utils)
 
 args=commandArgs(trailingOnly=TRUE)
 file_1=args[1]
@@ -27,7 +28,7 @@ merge_files<-function(file1,file2,file3){
     merged1<-merge(merged,reshaped[[3]],by=c("Metadata_Plate","Metadata_Well"),all.x=TRUE,all.y=TRUE)
     platename<-unique(merged1$Metadata_Plate)
     platename<-gsub('/','',platename)
-    write.csv(merged1,paste0(platename,".csv"),row.names = FALSE)
+    write.csv(merged1,gzfile(paste0(platename,".csv.gz")),row.names = FALSE)
 }
 
 merge_files(file_1,file_2,file_3)
