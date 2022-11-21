@@ -38,9 +38,9 @@ mydf=fread(mydf)
 compdf=fread(compdf)
 
 aggregate_data<-function(file,file_name){
-    plate=unique(file$Metadata_Plate)
+    plate=unique(file$Metadata_Plate)[[1]]
     #melt the df
-    file<-melt(file)
+    file<-melt(file,id.vars=c("Metadata_Plate","Metadata_Well"))
     names(file)[names(file)=="variable"]<-"Measurement"
     names(file)[names(file)=="value"]<-"Median"
     #get median and mad and rename the grouping variables
@@ -52,7 +52,7 @@ aggregate_data<-function(file,file_name){
     names(mad_ofdata)[names(mad_ofdata)=="x"]<-"Measurement_MAD"
 
     data_med_mad<-merge(median_ofdata,mad_ofdata,by="Measurement")
-    data_med_mad<-cbind(Metadata_Plate=rep(plate,nrow(data_med_mad)),data_med_mad)
+    #data_med_mad<-cbind(Metadata_Plate=rep(plate,nrow(data_med_mad)),data_med_mad) #don't need this if I use id.vars on the melt() function
     return(data_med_mad)
 }
 
@@ -67,7 +67,7 @@ names(compdf)[names(compdf)=="Measurement_MAD"]<-"CompDF_Measurement_MAD"
 
 calc_spread<-function(firstdf,compdf){
     #merge the two dataframes
-    merged<-merge(firstdf,compdf,by=c("Metadata_Plate","Measurement"))
+    merged<-merge(firstdf,compdf,by=c("Metadata_broad_sample","Measurement"))
     #find the difference in median
     merged$Median_Difference=(merged$FirstDF_Measurement_Median - merged$CompDF_Measurement_Median)
     median_stats<-data.frame(Median=round(median(merged$Median_Difference,na.rm=TRUE),2),SD=round(sd(merged$Median_Difference,na.rm=TRUE),2))
