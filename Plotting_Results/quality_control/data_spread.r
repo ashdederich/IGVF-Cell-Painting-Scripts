@@ -67,7 +67,7 @@ names(compdf)[names(compdf)=="Measurement_MAD"]<-"CompDF_Measurement_MAD"
 
 calc_spread<-function(firstdf,compdf){
     #merge the two dataframes
-    merged<-merge(firstdf,compdf,by=c("Metadata_broad_sample","Measurement"))
+    merged<-merge(firstdf,compdf,by="Measurement")
     #find the difference in median
     merged$Median_Difference=(merged$FirstDF_Measurement_Median - merged$CompDF_Measurement_Median)
     median_stats<-data.frame(Median=round(median(merged$Median_Difference,na.rm=TRUE),2),SD=round(sd(merged$Median_Difference,na.rm=TRUE),2))
