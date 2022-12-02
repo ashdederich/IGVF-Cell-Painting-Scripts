@@ -43,6 +43,7 @@ aggregate_data<-function(file,file_name){
     file<-melt(file,id.vars=c("Metadata_Plate","Metadata_Well"))
     names(file)[names(file)=="variable"]<-"Measurement"
     names(file)[names(file)=="value"]<-"Median"
+    plate<-unique(file$Metadata_Plate)
     #get median and mad and rename the grouping variables
     median_ofdata=aggregate(file$Median,by=list(file$Measurement),median)
     mad_ofdata=aggregate(file$Median,by=list(file$Measurement),mad)
@@ -52,7 +53,7 @@ aggregate_data<-function(file,file_name){
     names(mad_ofdata)[names(mad_ofdata)=="x"]<-"Measurement_MAD"
 
     data_med_mad<-merge(median_ofdata,mad_ofdata,by="Measurement")
-    #data_med_mad<-cbind(Metadata_Plate=rep(plate,nrow(data_med_mad)),data_med_mad) #don't need this if I use id.vars on the melt() function
+    data_med_mad<-cbind(Metadata_Plate=rep(plate,nrow(data_med_mad)),data_med_mad)
     return(data_med_mad)
 }
 
@@ -67,7 +68,7 @@ names(compdf)[names(compdf)=="Measurement_MAD"]<-"CompDF_Measurement_MAD"
 
 calc_spread<-function(firstdf,compdf){
     #merge the two dataframes
-    merged<-merge(firstdf,compdf,by="Measurement")
+    merged<-merge(firstdf,compdf,by=c("Metadata_Plate","Measurement"))
     #find the difference in median
     merged$Median_Difference=(merged$FirstDF_Measurement_Median - merged$CompDF_Measurement_Median)
     median_stats<-data.frame(Median=round(median(merged$Median_Difference,na.rm=TRUE),2),SD=round(sd(merged$Median_Difference,na.rm=TRUE),2))
@@ -77,9 +78,9 @@ calc_spread<-function(firstdf,compdf){
     mad_stats<-data.frame(Median=round(median(merged$MAD_Difference,na.rm=TRUE),2),SD=round(sd(merged$MAD_Difference,na.rm=TRUE),2))
     mad_stats<-cbind(MAD_Difference=1,mad_stats)
     #plot both in same plot and ggsave it
-    p_median<-ggplot(merged,aes(x=Median_Difference)) + geom_histogram(binwidth=1,color="black") + labs(title=paste0("Difference between Median Values of each Feature Comparing\nBroad to UTSW Data Set with the ",filename_sp,"\nPlate ",unique(merged$Metadata_Plate))) + theme(strip.text = element_text(size = 6.2)) + geom_abs_text(data=median_stats,mapping = aes(label = paste0("Median=",Median)),color="black",size=3,xpos=0.15,ypos=0.9) + geom_abs_text(data=median_stats,mapping = aes(label = paste0("Standard Deviation=",SD)),color="black",size=3,xpos=0.15,ypos=0.85)
+    p_median<-ggplot(merged,aes(x=Median_Difference)) + geom_bar(color="black") + labs(title=paste0("Difference between Median Values of each Feature Comparing\nBroad to UTSW Data Set with the ",filename_sp,"\nPlate ",unique(merged$Metadata_Plate))) + theme(strip.text = element_text(size = 6.2)) + geom_abs_text(data=median_stats,mapping = aes(label = paste0("Median=",Median)),color="black",size=3,xpos=0.15,ypos=0.9) + geom_abs_text(data=median_stats,mapping = aes(label = paste0("Standard Deviation=",SD)),color="black",size=3,xpos=0.15,ypos=0.85)
     ggsave(paste0("MedianDifference_",filename,"_",unique(merged$Metadata_Plate),".png"), type = "cairo")
-    p_mad<-ggplot(merged,aes(x=MAD_Difference)) + geom_histogram(binwidth=1,color="black") + labs(title=paste0("Difference between MAD of each Feature Comparing\nBroad to UTSW Data Set with the ", filename_sp, "\nPlate ",unique(merged$Metadata_Plate))) + theme(strip.text = element_text(size = 6.2)) + geom_abs_text(data=mad_stats,mapping = aes(label = paste0("Median=",Median)),color="black",size=3,xpos=0.15,ypos=0.9) + geom_abs_text(data=mad_stats,mapping = aes(label = paste0("Standard Deviation=",SD)),color="black",size=3,xpos=0.15,ypos=0.85)
+    p_mad<-ggplot(merged,aes(x=MAD_Difference)) + geom_bar(color="black") + labs(title=paste0("Difference between MAD of each Feature Comparing\nBroad to UTSW Data Set with the ", filename_sp, "\nPlate ",unique(merged$Metadata_Plate))) + theme(strip.text = element_text(size = 6.2)) + geom_abs_text(data=mad_stats,mapping = aes(label = paste0("Median=",Median)),color="black",size=3,xpos=0.15,ypos=0.9) + geom_abs_text(data=mad_stats,mapping = aes(label = paste0("Standard Deviation=",SD)),color="black",size=3,xpos=0.15,ypos=0.85)
     ggsave(paste0("MADDifference_",filename,"_",unique(merged$Metadata_Plate),".png"), type = "cairo")
 }
 
