@@ -17,30 +17,33 @@ args=commandArgs(trailingOnly=TRUE)
 mydf=args[1]
 comparisondf=args[2]
 metadata=fread(args[3])
-filetype=args[5]
-comp1<-args[6]
-comp2<-args[7]
+filetype=args[4]
+comp1<-args[5]
+comp2<-args[6]
 
 #set up title and measurements files to detect feature-summarized or negcon summarized
 mydf_meas<-sub("\\.csv.gz.*","",mydf)
-compdf_meas<-sub("\\.csv.gz.*","",comparisondf)
 
 if(grepl("feature",filetype,fixed=TRUE)==TRUE){
-    title="CP-Output-Feature-Normalized"
-    mydf_meas_file=paste0(mydf_meas,"_normalized_feature_select_batch.csv.gz")
-    compdf_meas_file=paste0(compdf_meas,"_normalized_feature_select_batch.csv.gz")
-} else if (grepl("negcon",filetype,fixed=TRUE)==TRUE){
-    title="CP-Output-NegCon-Normalized"
+    title="CP-Output-with-Feature-Normalized-Features"
+    title_sp=gsub("-"," ",title,fixed=TRUE)
+    plottitle="CP-Ouput-Feature-Normalized"
+    mydf_meas_file=paste0(mydf_meas,"/",mydf_meas,"_normalized_feature_select_batch.csv.gz")
+    compdf_meas_file=paste0(comparisondf,"/",basename(comparisondf),"_normalized_feature_select_batch.csv.gz")
+} else if(grepl("neg",filetype,fixed=TRUE)==TRUE){
+    title="CP-Output-with-NegCon-Normalized-Features"
+    title_sp=gsub("-"," ",title,fixed=TRUE)
+    plottitle="CP-Output-NegCon-Normalized"
     mydf_meas_file=paste0(mydf_meas,"_normalized_feature_select_negcon_batch.csv.gz")
-    compdf_meas_file=paste0(compdf_meas,"_normalized_feature_select_negcon_batch.csv.gz")
+    compdf_meas_file=paste0(comparisondf,"/",basename(comparisondf),"_normalized_feature_select_negcon_batch.csv.gz")
+} else {
+    print("There is no matching filetype")
 }
 
-title_sp<-gsub("-", " ", title, fixed=TRUE)
-comp1<-gsub("-"," ", comp1,fixed=TRUE)
-comp2<-gsub("-"," ", comp2,fixed=TRUE)
+comp1=gsub("-"," ", comp1,fixed=TRUE)
+comp2=gsub("-"," ", comp2,fixed=TRUE)
 
 #getting intersection of features
-
 reshape_data<-function(file){
     df<-fread(file)
     df_new<-df[,grep("Cells",colnames(df))[[1]]:ncol(df)]
@@ -113,8 +116,8 @@ df_all_lmcoef$Slope<-paste0("Slope=",df_all_lmcoef$Slope)
 df_all_lmcoef=cbind(UTSW_Median=1,Broad_Median=1,df_all_lmcoef)
 
 #creating correlation plot
-ggplot(df_all, aes(x=UTSW_Median,Broad_Median)) + geom_point(colour="black") + geom_smooth(method='lm',formula=y~x,color="black") + stat_regline_equation(aes(label = ..rr.label..)) + labs(title=paste0("Correlation between Broad Data Set and UTSW Using the\n",title_sp," File\nPlate ", plateid),x=paste0(comp1," Median"), y=paste0(comp2," Median")) + geom_abs_text(data=df_all_lmcoef,mapping = aes(label = Slope),color="black",size=3.8,xpos=0.08,ypos=0.84)
-ggsave(paste0("CorrelationAllData_",plateid,"_",title,".png"), type = "cairo",width=10,height=7)
+ggplot(df_all, aes(x=UTSW_Median,Broad_Median)) + geom_point(colour="black") + geom_smooth(method='lm',formula=y~x,color="black") + stat_regline_equation(aes(label = ..rr.label..)) + labs(title=paste0("Correlation between Broad and UTSW Data Sets Using\n",title_sp,"\nPlate ", plateid),x=paste0(comp1," Normalized Feature Value"), y=paste0(comp2," Normalized Feature Value")) + geom_abs_text(data=df_all_lmcoef,mapping = aes(label = Slope),color="black",size=3.8,xpos=0.08,ypos=0.84)
+ggsave(paste0("CorrelationAllData_",plateid,"_",plottitle,".png"), type = "cairo",width=10,height=7)
 
 #summarizing by compound
 #calculate lm for each broad sample
@@ -128,5 +131,5 @@ cmpd_lm_coef[,3]=round(cmpd_lm_coef$Slope,3)
 cmpd_lm_coef$Slope<-ldply(paste0("Slope=",cmpd_lm_coef$Slope))
 colnames(cmpd_lm_coef[,3])<-"Slope"
 
-ggplot(df_all, aes(x=UTSW_Median,y=Broad_Median,group=Metadata_pert_iname,color=Metadata_pert_iname)) + geom_point() + geom_smooth(method='lm',formula=y~x) + facet_wrap(~Metadata_pert_iname,scales="free") + labs(title=paste0("Correlation between Broad Data Set and Ours Using the\n",title_sp," File\nPlate ", plateid),x=paste0(comp1," Median"), y=paste0(comp2," Median")) + stat_poly_eq(label.x="left",label.y="top",size=2.5,color="black") + theme(strip.text = element_text(size = 6.2),axis.text=element_text(size=5)) + geom_abs_text(data=cmpd_lm_coef,mapping = aes(label = Slope),color="black",size=2.5,xpos=0.7,ypos=0.18)
-ggsave(paste0("CorrelationPlot_ByCmpd_",title,".png"), type = "cairo")
+ggplot(df_all, aes(x=UTSW_Median,y=Broad_Median,group=Metadata_pert_iname,color=Metadata_pert_iname)) + geom_point() + geom_smooth(method='lm',formula=y~x) + facet_wrap(~Metadata_pert_iname,scales="free") + labs(title=paste0("Correlation between Broad and UTSW Data Sets Using\n",title_sp,"\nPlate ", plateid),x=paste0(comp1," Normalized Feature Value"), y=paste0(comp2," Normalized Feature Value")) + stat_poly_eq(label.x="left",label.y="top",size=2.5,color="black") + theme(strip.text = element_text(size = 6.2),axis.text=element_text(size=5)) + geom_abs_text(data=cmpd_lm_coef,mapping = aes(label = Slope),color="black",size=2.5,xpos=0.7,ypos=0.18)
+ggsave(paste0("CorrelationByCmpd_",plateid,"_",plottitle,".png"), type = "cairo")
