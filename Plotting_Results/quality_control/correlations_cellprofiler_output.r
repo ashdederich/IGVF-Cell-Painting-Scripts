@@ -32,7 +32,7 @@ if(grepl("feat",filetype,fixed=TRUE)==TRUE){
     title="CP-Output-with-NegCon-Normalized-Features"
     title_sp=gsub("-"," ",title,fixed=TRUE)
     plottitle="CP-Output-NegCon-Normalized"
-    mydf_meas_file=paste0(mydf,"_normalized_feature_select_negcon_batch.csv.gz")
+    mydf_meas_file=paste0(mydf,"/",mydf,"_normalized_feature_select_negcon_batch.csv.gz")
     compdf_meas_file=paste0(comparisondf,"/",basename(comparisondf),"_normalized_feature_select_negcon_batch.csv.gz")
     mydf=paste0(mydf,"/",mydf,".csv.gz")
     compdf=paste0(comparisondf,"/",basename(comparisondf),".csv.gz")
