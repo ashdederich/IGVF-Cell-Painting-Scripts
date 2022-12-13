@@ -30,16 +30,16 @@ if(grepl("feature",filetype,fixed=TRUE)==TRUE){
     plottitle="CP-Ouput-Feature-Normalized"
     mydf_meas_file=paste0(mydf_meas,"/",mydf_meas,"_normalized_feature_select_batch.csv.gz")
     compdf_meas_file=paste0(comparisondf,"/",basename(comparisondf),"_normalized_feature_select_batch.csv.gz")
-    mydf=paste0(plate1,"/",plate1,".csv.gz")
-    compdf=paste0(plate2,"/",basename(plate2),".csv.gz")
+    mydf=paste0(mydf,"/",mydf,".csv.gz")
+    compdf=paste0(comparisondf,"/",basename(comparisondf),".csv.gz")
 } else if(grepl("neg",filetype,fixed=TRUE)==TRUE){
     title="CP-Output-with-NegCon-Normalized-Features"
     title_sp=gsub("-"," ",title,fixed=TRUE)
     plottitle="CP-Output-NegCon-Normalized"
     mydf_meas_file=paste0(mydf_meas,"_normalized_feature_select_negcon_batch.csv.gz")
     compdf_meas_file=paste0(comparisondf,"/",basename(comparisondf),"_normalized_feature_select_negcon_batch.csv.gz")
-    mydf=paste0(plate1,"/",plate1,".csv.gz")
-    compdf=paste0(plate2,"/",basename(plate2),".csv.gz")
+    mydf=paste0(mydf,"/",mydf,".csv.gz")
+    compdf=paste0(comparisondf,"/",basename(comparisondf),".csv.gz")
 } else {
     print("There is no matching filetype")
 }
