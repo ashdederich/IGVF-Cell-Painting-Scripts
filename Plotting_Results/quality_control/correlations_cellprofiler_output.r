@@ -79,7 +79,7 @@ compounds<-c("NVS-PAK1-1","aloxistatin","FK-866","AMG900","LY2109761","dexametha
 
 #getting metadata for broad
 broad_batchid=basename(dirname(dirname(comparisondf)))
-comparisondf=fread(comparisondf)
+comparisondf=fread(compdf)
 broad_plateid=unique(comparisondf$Metadata_Plate)[1]
 broad_barcode=fread(paste0("../../metadata/platemaps/",broad_batchid,"/barcode_platemap.csv"))
 broad_barcode=broad_barcode %>% filter(Assay_Plate_Barcode==broad_plateid) %>% pull(var=Plate_Map_Name)
