@@ -20,16 +20,30 @@ jump_compounds=args[4]
 
 plate1=sub("\\/.*","",plate1)
 
-if(grepl("feat",filetype,fixed=TRUE)==TRUE){
-    filename="Feature-Normalized"
-    filename_sp=gsub("-"," ", filename,fixed=TRUE)
-    mydf=paste0(plate1,"/",plate1,"_normalized_feature_select_batch.csv.gz")
-    compdf=paste0(plate2,"/",basename(plate2),"_normalized_feature_select_batch.csv.gz")
-} else if(grepl("neg",filetype,fixed=TRUE)==TRUE){
-    filename="NegCon-Normalized"
-    filename_sp=gsub("-"," ", filename,fixed=TRUE)
-    mydf=paste0(plate1,"/",plate1,"_normalized_feature_select_negcon_batch.csv.gz")
-    compdf=paste0(plate2,"/",basename(plate2),"_normalized_feature_select_negcon_batch.csv.gz")
+if(grepl("norm",filetype,fixed=TRUE)==TRUE){
+    if(grepl("feat",filetype,fixed=TRUE)==TRUE){
+        filename="Feature-Normalized"
+        filename_sp=gsub("-"," ", filename,fixed=TRUE)
+        mydf=paste0(plate1,"/",plate1,"_normalized.csv.gz")
+        compdf=paste0(plate2,"/",basename(plate2),"_normalized.csv.gz")
+    } else if(grepl("neg",filetype,fixed=TRUE)==TRUE){
+        filename="Negative-Control-Normalized"
+        filename_sp=gsub("-"," ", filename,fixed=TRUE)
+        mydf=paste0(plate1,"/",plate1,"_normalized_negcon.csv.gz")
+        compdf=paste0(plate2,"/",basename(plate2),"_normalized_negcon.csv.gz")
+    }
+} else if(grepl("sel",filetype,fixed=TRUE)==TRUE){
+    if(grepl("feat",filetype,fixed=TRUE)==TRUE){
+        filename="Feature-Normalized-Selected-Features"
+        filename_sp=gsub("-"," ", filename,fixed=TRUE)
+        mydf=paste0(plate1,"/",plate1,"_normalized_feature_select_batch.csv.gz")
+        compdf=paste0(plate2,"/",basename(plate2),"_normalized_feature_select_batch.csv.gz")
+    } else if(grepl("neg",filetype,fixed=TRUE)==TRUE){
+        filename="Negative-Control-Normalized-Selected-Features"
+        filename_sp=gsub("-"," ", filename,fixed=TRUE)
+        mydf=paste0(plate1,"/",plate1,"_normalized_feature_select_negcon_batch.csv.gz")
+        compdf=paste0(plate2,"/",basename(plate2),"_normalized_feature_select_negcon_batch.csv.gz")
+    }
 } else {
     print("There is no matching file")
 }
@@ -99,6 +113,6 @@ if(jump_compounds==TRUE){
     cmpd_lm_coef$Slope<-ldply(paste0("Slope=",cmpd_lm_coef$Slope))
     colnames(cmpd_lm_coef[,3])<-"Slope"
 
-    ggplot(df_all, aes(x=UTSW_Median,y=Broad_Median,group=Metadata_pert_iname,color=Metadata_pert_iname)) + geom_point() + geom_smooth(method='lm',formula=y~x) + facet_wrap(~Metadata_pert_iname,scales="free") + labs(title=paste0("Correlation between Broad and UTSW Data Sets\nAfter PyCytominer Using the ",filename_sp," File\nPlate ",mydf_plateid)) + stat_poly_eq(label.x="left",label.y="top",size=2.5,color="black") + theme(strip.text = element_text(size = 6.2)) + geom_abs_text(data=cmpd_lm_coef,mapping = aes(label = Slope),color="black",size=2.5,xpos=0.7,ypos=0.18)
+    ggplot(df_all, aes(x=UTSW_Median,y=Broad_Median,group=Metadata_pert_iname,color=Metadata_pert_iname)) + geom_point() + geom_smooth(method='lm',formula=y~x) + facet_wrap(~Metadata_pert_iname,scales="free") + labs(title=paste0("Correlation between Broad and UTSW Data Sets\nAfter PyCytominer Using the ",filename_sp," File\nPlate ",mydf_plateid),x="UTSW Normalized Feature Value",y="Broad Normalized Feature Value") + stat_poly_eq(label.x="left",label.y="top",size=2.5,color="black") + theme(strip.text = element_text(size = 6.2)) + geom_abs_text(data=cmpd_lm_coef,mapping = aes(label = Slope),color="black",size=2.5,xpos=0.7,ypos=0.18)
     ggsave(paste0("PyCyto_CorrelationByCmpd_",mydf_plateid,"_",filename,".png"), type = "cairo")
 }
