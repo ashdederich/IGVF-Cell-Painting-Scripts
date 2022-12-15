@@ -90,17 +90,17 @@ compdf_sub<-subset_data(compdf,compounds,jump_compounds,feats)
 #merge data sheets by type
 df_all<-merge(mydf_sub,compdf_sub,by=c("Metadata_pert_iname","Measurement"))
 #calculate the slope and add to the plot
-df_all_lm<-lm(UTSW_Median~Broad_Median,df_all)
-df_all_lmcoef<-coef(df_all_lm)
-df_all_lmcoef<-data.frame(Slope=round(df_all_lmcoef[[2]],3))
-df_all_lmcoef$Slope<-paste0("Slope=",df_all_lmcoef$Slope)
-df_all_lmcoef=cbind(UTSW_Median=1,Broad_Median=1,df_all_lmcoef)
+#df_all_lm<-lm(UTSW_Median~Broad_Median,df_all)
+#df_all_lmcoef<-coef(df_all_lm)
+#df_all_lmcoef<-data.frame(Slope=round(df_all_lmcoef[[2]],3))
+#df_all_lmcoef$Slope<-paste0("Slope=",df_all_lmcoef$Slope)
+#df_all_lmcoef=cbind(UTSW_Median=1,Broad_Median=1,df_all_lmcoef)
 
 #creating correlation plot by Metadata_Compound
-ggplot(df_all, aes(x=UTSW_Median,Broad_Median)) + geom_point(colour="black") + geom_smooth(method='lm',formula=y~x, colour="black") + stat_poly_eq() + labs(title=paste0("Correlation between Broad and UTSW Data Sets\nAfter PyCytominer Normalization Using the ",filename_sp," File\nPlate ",mydf_plateid),x="UTSW Normalized Feature Value",y="Broad Normalized Feature Value") + geom_abs_text(data=df_all_lmcoef,mapping = aes(label = Slope),color="black",size=3.8,xpos=0.1,ypos=0.9)
-ggsave(paste0("PyCyto_CorrelationAll_",mydf_plateid,"_",filename,".png"), type = "cairo")
+ggplot(df_all, aes(x=UTSW_Median,Broad_Median)) + geom_point(colour="black") + geom_smooth(method='lm',formula=y~x, colour="black") + stat_poly_eq() + labs(title=paste0("Correlation between Broad and UTSW Data Sets\nAfter PyCytominer Normalization Using the ",filename_sp," File\nPlate ",mydf_plateid),x="UTSW Normalized Feature Value",y="Broad Normalized Feature Value")
 
-ggplot(df_all, aes(x=UTSW_Median,y=Broad_Median)) + geom_point(colour="black") + geom_smooth(method='lm',formula=y~x, colour="black") + stat_poly_eq() + labs(title=paste0("Correlation between Broad and UTSW Data Sets\nAfter PyCytominer Normalization Using the ",filename_sp," File\nPlate ",mydf_plateid),x="UTSW Normalized Feature Value",y="Broad Normalized Feature Value")
+# + geom_abs_text(data=df_all_lmcoef,mapping = aes(label = Slope),color="black",size=3.8,xpos=0.1,ypos=0.9)
+ggsave(paste0("PyCyto_CorrelationAll_",mydf_plateid,"_",filename,".png"), type = "cairo")
 
 #summarizing by compound
 #calculate lm for each broad sample
