@@ -14,6 +14,11 @@ plate2=args[2]
 filetype=args[3]
 dmso=args[4]
 
+#adding default option for dmso boolean if argument not given
+if(dmso==""){
+    dmso=FALSE
+}
+
 plate1=sub("\\/.*","",plate1)
 
 if(grepl("cp",filetype,fixed=TRUE)==TRUE){
