@@ -12,12 +12,19 @@ library(zplyr)
 plate1=args[1]
 plate2=args[2]
 filetype=args[3]
+dmso=args[4]
 
 plate1=sub("\\/.*","",plate1)
 
 if(grepl("cp",filetype,fixed=TRUE)==TRUE){
-    filename="CellProfiler-Output"
-    filename_sp=gsub("-"," ", filename,fixed=TRUE)
+    if(dmso==TRUE){
+        filename="CellProfiler-Output-DMSO-Only"
+        filename_sp=gsub("-"," ", filename,fixed=TRUE)
+    }
+    else{
+        filename="CellProfiler-Output"
+        filename_sp=gsub("-"," ", filename,fixed=TRUE)
+    }
     mydf=paste0(plate1,"/",plate1,".csv.gz")
     compdf=paste0(plate2,"/",basename(plate2),".csv.gz")
 } else if(grepl("py",filetype,fixed=TRUE)==TRUE && grepl("feat",filetype,fixed=TRUE)==TRUE) {
@@ -37,10 +44,14 @@ if(grepl("cp",filetype,fixed=TRUE)==TRUE){
 mydf=fread(mydf)
 compdf=fread(compdf)
 
-aggregate_data<-function(file,file_name){
-    plate=unique(file$Metadata_Plate)[[1]]
+aggregate_data<-function(file){
+    if(dmso==TRUE){
+        file<-melt(file,id.vars=c("Metadata_Plate","Metadata_Well","Metadata_pert_iname"))
+    }
+    else if(dmso==FALSE){
+        file<-melt(file,id.vars=c("Metadata_Plate","Metadata_Well"))
+    }
     #melt the df
-    file<-melt(file,id.vars=c("Metadata_Plate","Metadata_Well"))
     names(file)[names(file)=="variable"]<-"Measurement"
     names(file)[names(file)=="value"]<-"Median"
     plate<-unique(file$Metadata_Plate)
@@ -57,15 +68,19 @@ aggregate_data<-function(file,file_name){
     return(data_med_mad)
 }
 
-mydf<-aggregate_data(mydf)
-names(mydf)[names(mydf)=="Measurement_Median"]<-"FirstDF_Measurement_Median"
-names(mydf)[names(mydf)=="Measurement_MAD"]<-"FirstDF_Measurement_MAD"
+if(dmso==FALSE){
+    mydf_agg<-aggregate_data(mydf)
+    names(mydf_agg)[names(mydf_agg)=="Measurement_Median"]<-"FirstDF_Measurement_Median"
+    names(mydf_agg)[names(mydf_agg)=="Measurement_MAD"]<-"FirstDF_Measurement_MAD"
+}
 
-compdf<-aggregate_data(compdf)
-names(compdf)[names(compdf)=="Measurement_Median"]<-"CompDF_Measurement_Median"
-names(compdf)[names(compdf)=="Measurement_MAD"]<-"CompDF_Measurement_MAD"
+if(dmso==FALSE){
+    compdf_agg<-aggregate_data(compdf)
+    names(compdf_agg)[names(compdf_agg)=="Measurement_Median"]<-"CompDF_Measurement_Median"
+    names(compdf_agg)[names(compdf_agg)=="Measurement_MAD"]<-"CompDF_Measurement_MAD"
+}
+
 #find difference in spread of data between both datasets and the correlation between the two
-
 calc_spread<-function(firstdf,compdf){
     #merge the two dataframes
     merged<-merge(firstdf,compdf,by=c("Metadata_Plate","Measurement"))
@@ -84,4 +99,33 @@ calc_spread<-function(firstdf,compdf){
     ggsave(paste0("MADDifference_",filename,"_",unique(merged$Metadata_Plate),".png"), type = "cairo")
 }
 
-calc_spread(mydf,compdf)
+if(dmso==FALSE){
+    calc_spread(mydf_agg,compdf_agg)
+}
+
+if(dmso==TRUE){
+    metadata=fread("../../metadata/external_metadata/JUMP-Target-1_compound_metadata.tsv")
+    broad_batchid=basename(dirname(plate2))
+    broad_plateid=unique(compdf$Metadata_Plate)[1]
+    broad_barcode=fread(paste0("../../metadata/platemaps/",broad_batchid,"/barcode_platemap.csv"))
+    broad_barcode=broad_barcode %>% filter(Assay_Plate_Barcode==broad_plateid) %>% pull(var=Plate_Map_Name)
+    broad_platemap=fread(paste0("../../metadata/platemaps/",broad_batchid,"/platemap/",broad_barcode,".txt"))
+    names(broad_platemap)[names(broad_platemap)=="well_position"]<-"Metadata_Well"
+    broad_platemap=broad_platemap[,1:2] #only get well_position and broad_sample information
+    broad_metadata=inner_join(broad_platemap,metadata,by="broad_sample")
+    broad_metadata=data.frame(Metadata_Well=broad_metadata$Metadata_Well,Metadata_pert_iname=broad_metadata$pert_iname,Metadata_broad_sample=broad_metadata$broad_sample)
+    broad_metadata=subset(broad_metadata,select=c("Metadata_Well","Metadata_pert_iname"))
+    compdf<-merge(broad_metadata,compdf,by="Metadata_Well")
+    #compdf$Metadata_pert_iname[which(compdf$Metadata_pert_iname=="")]<-"DMSO"
+    compdf<-compdf[which(compdf$Metadata_pert_iname=="DMSO"),]
+    mydf<-merge(broad_metadata,mydf,by="Metadata_Well")
+    #mydf$Metadata_pert_iname[which(mydf$Metadata_pert_iname=="")]<-"DMSO"
+    mydf<-mydf[which(mydf$Metadata_pert_iname=="DMSO"),]
+    mydf<-aggregate_data(mydf)
+    names(mydf)[names(mydf)=="Measurement_Median"]<-"FirstDF_Measurement_Median"
+    names(mydf)[names(mydf)=="Measurement_MAD"]<-"FirstDF_Measurement_MAD"
+    compdf<-aggregate_data(compdf)
+    names(compdf)[names(compdf)=="Measurement_Median"]<-"CompDF_Measurement_Median"
+    names(compdf)[names(compdf)=="Measurement_MAD"]<-"CompDF_Measurement_MAD"
+    calc_spread(mydf,compdf)
+}
