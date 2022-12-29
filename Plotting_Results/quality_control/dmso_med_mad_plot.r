@@ -26,7 +26,8 @@ if(outliers==""){
 
 plate1=sub("\\/.*","",plate1)
 
-if(grepl("cp",filetype,fixed=TRUE)==TRUE){
+#create an if outlier or if cp ==true, then join with metadata
+if(grepl("cp",filetype,fixed=TRUE)==TRUE | outliers==TRUE){
     if(dmso==TRUE){
         filename="CellProfiler-DMSO-Only"
         filename_sp=gsub("-"," ", filename,fixed=TRUE)
@@ -34,9 +35,29 @@ if(grepl("cp",filetype,fixed=TRUE)==TRUE){
         filename="CellProfiler-Output"
         filename_sp=gsub("-"," ", filename,fixed=TRUE)
     }
-    mydf=paste0(plate1,"/",plate1,".csv.gz")
-    compdf=paste0(plate2,"/",basename(plate2),".csv.gz")
-} else if(grepl("py",filetype,fixed=TRUE)==TRUE && grepl("feat",filetype,fixed=TRUE)==TRUE) {
+    #read in dataframes
+    my_cpdf=fread(paste0(plate1,"/",plate1,".csv.gz"))
+    comp_cpdf=fread(paste0(plate2,"/",basename(plate2),".csv.gz"))
+    #read in metadata
+    metadata=fread("../../metadata/external_metadata/JUMP-Target-1_compound_metadata.tsv")
+    broad_batchid=basename(dirname(plate2))
+    broad_plateid=unique(comp_cpdf$Metadata_Plate)[1]
+    broad_barcode=fread(paste0("../../metadata/platemaps/",broad_batchid,"/barcode_platemap.csv"))
+    broad_barcode=broad_barcode %>% filter(Assay_Plate_Barcode==broad_plateid) %>% pull(var=Plate_Map_Name)
+    broad_platemap=fread(paste0("../../metadata/platemaps/",broad_batchid,"/platemap/",broad_barcode,".txt"))
+    names(broad_platemap)[names(broad_platemap)=="well_position"]<-"Metadata_Well"
+    broad_platemap=broad_platemap[,1:2] #only get well_position and broad_sample information
+    broad_metadata=inner_join(broad_platemap,metadata,by="broad_sample")
+    broad_metadata=data.frame(Metadata_Well=broad_metadata$Metadata_Well,Metadata_pert_iname=broad_metadata$pert_iname,Metadata_broad_sample=broad_metadata$broad_sample)
+    broad_metadata=subset(broad_metadata,select=c("Metadata_Well","Metadata_pert_iname"))
+    #merge both dataframes with metadata
+    my_cpdf<-merge(broad_metadata,my_cpdf,by="Metadata_Well")
+    comp_cpdf<-merge(broad_metadata,comp_cpdf,by="Metadata_Well")
+}
+
+#separate from cp/outlier if statement, becuase we need both files if outlier is TRUE
+#if pycytominer is needed, then select these files
+if(grepl("py",filetype,fixed=TRUE)==TRUE && grepl("feat",filetype,fixed=TRUE)==TRUE){
     if(dmso==TRUE){
         filename="PyCytominer-Feature-Normalized-DMSO-Only"
         filename_sp=gsub("-"," ", filename,fixed=TRUE)
@@ -60,38 +81,16 @@ if(grepl("cp",filetype,fixed=TRUE)==TRUE){
     print("There is no matching file")
 }
 
-
-#create an if outlier or if cp ==true, then join with metadata
-if(grepl("cp",filetype,fixed=TRUE)==TRUE | outliers==TRUE){
-    if(dmso==TRUE){
-        filename="CellProfiler-DMSO-Only"
-        filename_sp=gsub("-"," ", filename,fixed=TRUE)
-    }else{
-        filename="CellProfiler-Output"
-        filename_sp=gsub("-"," ", filename,fixed=TRUE)
-    }
-    mydf=fread(paste0(plate1,"/",plate1,".csv.gz"))
-    compdf=fread(paste0(plate2,"/",basename(plate2),".csv.gz"))
-    metadata=fread("../../metadata/external_metadata/JUMP-Target-1_compound_metadata.tsv")
-    broad_batchid=basename(dirname(plate2))
-    broad_plateid=unique(compdf$Metadata_Plate)[1]
-    broad_barcode=fread(paste0("../../metadata/platemaps/",broad_batchid,"/barcode_platemap.csv"))
-    broad_barcode=broad_barcode %>% filter(Assay_Plate_Barcode==broad_plateid) %>% pull(var=Plate_Map_Name)
-    broad_platemap=fread(paste0("../../metadata/platemaps/",broad_batchid,"/platemap/",broad_barcode,".txt"))
-    names(broad_platemap)[names(broad_platemap)=="well_position"]<-"Metadata_Well"
-    broad_platemap=broad_platemap[,1:2] #only get well_position and broad_sample information
-    broad_metadata=inner_join(broad_platemap,metadata,by="broad_sample")
-    broad_metadata=data.frame(Metadata_Well=broad_metadata$Metadata_Well,Metadata_pert_iname=broad_metadata$pert_iname,Metadata_broad_sample=broad_metadata$broad_sample)
-    broad_metadata=subset(broad_metadata,select=c("Metadata_Well","Metadata_pert_iname"))
-    compdf<-merge(broad_metadata,compdf,by="Metadata_Well")
-}else{
+if(grepl("py",filetype,fixed=TRUE)==TRUE) {
     mydf=fread(mydf)
     compdf=fread(compdf)
 }
 
+#function to aggregate data, with a built-in if dmso==TRUE statement (no need to have if dmso==TRUE statement in later functions, then.
 aggregate_data<-function(file){
     if(dmso==TRUE){
         if(grepl("py",filetype,fixed=TRUE)==TRUE){
+            #get metadata wanted and join with measurements, then melt
             file_meta<-data.frame(Metadata_Plate=file$Metadata_Plate,Metadata_Well=file$Metadata_Well,Metadata_pert_iname=file$Metadata_pert_iname)
             col_start<-grep("Cells",colnames(file))[[1]]
             file_data<-file[,col_start:ncol(file)]
@@ -99,8 +98,13 @@ aggregate_data<-function(file){
         }else{
             file<-melt(file,id.vars=c("Metadata_Plate","Metadata_Well","Metadata_pert_iname"))
         }
+        #subset the data to only get the DMSO data
+        file<-file[which(file$Metadata_pert_iname=="DMSO"),]
     }else{
-        file<-melt(file,id.vars=c("Metadata_Plate","Metadata_Well"))
+        file_meta<-data.frame(Metadata_Plate=file$Metadata_Plate,Metadata_Well=file$Metadata_Well)
+        col_start<-grep("Cells",colnames(file))[[1]]
+        file_data<-file[,col_start:ncol(file)]
+        file<-melt(data.frame(c(file_meta,file_data)),id.vars=c("Metadata_Plate","Metadata_Well"))
     }
     #melt the df
     names(file)[names(file)=="variable"]<-"Measurement"
@@ -119,6 +123,7 @@ aggregate_data<-function(file){
     return(data_med_mad)
 }
 
+#for both cp or pycyto data
 if(dmso==FALSE){
     mydf_agg<-aggregate_data(mydf)
     names(mydf_agg)[names(mydf_agg)=="Measurement_Median"]<-"UTSW_Median"
@@ -135,17 +140,42 @@ if(dmso==FALSE){
 #find outliers
 #subset aggregated file to remove outliers
 #return the subsetted file
-outlier_removal<-function(plate){
-    file=paste0(plate,"/",plate,".csv.gz")
-    file=fread(file)
-    file_agg=aggregate_data(file)
-    #need to remove outliers from CP file
+outlier_removal<-function(cp_df,py_df=NULL){
+    cp_agg=aggregate_data(cp_df)
+    py_agg=aggregate_data(py_df)
+    #only get dmso values first if dmso is set to TRUE
+    #remove outliers from CP file for each col - Median and MAD
+    median_outliers<-cp_agg[,"Measurement_Median"] %in% boxplot.stats(cp_agg[,"Measurement_Median"])$out
+    mad_outliers<-cp_agg[,"Measurement_MAD"] %in% boxplot.stats(cp_agg[,"Measurement_MAD"])$out
+    #replace outliers with NAs
+    cp_agg$Measurement_Median[median_outliers==TRUE]<-NA
+    cp_agg$Measurement_MAD[mad_outliers==TRUE]<-NA
     #then, if filetype = py, we match those up to the wells and measurements retained and replace outliers with NA
-    #find outliers and replace with NA for each column
-
+    if(grepl("py",filetype,fixed=TRUE)==TRUE){
+        #which measurements have an NA in cp_agg for median?
+        cp_median_na<-as.vector(cp_agg$Measurement[which(is.na(cp_agg$Measurement_Median))])
+        #which measurements have an NA in cp_agg for MAD?
+        cp_mad_na<-as.vector(cp_agg$Measurement[which(is.na(cp_agg$Measurement_MAD))])
+        #for those measurements in cp_agg with an NA, find those that match the measurements in py_agg and replace that data with an NA
+        py_agg$Measurement_Median[which(py_agg$Measurement%in%cp_median_na)]<-NA
+        py_agg$Measurement_MAD[which(py_agg$Measurement%in%cp_mad_na)]<-NA      
+        return(py_agg)
+    }else{
+        return(cp_agg)
+    }
 }
 
+#now set up if, else statement for cp or pycytominer files
 #if dmso is false and outlier is true, then perform outlier_removal function
+if(dmso==FALSE && outliers==TRUE){
+    if(grepl("cp",filetype,fixed=TRUE)==TRUE){
+        my_cpdf=outlier_removal(cp_df=my_cpdf)
+        comp_cpdf=outlier_removal(cp_df=comp_cpdf)
+    }else if(grepl("py",filetype,fixed=TRUE)==TRUE){
+        mydf=outlier_removal(cp_df=my_cpdf,py_df=mydf)
+        compdf=outlier_removal(cp_df=comp_cpdf,py_df=compdf)
+    }
+}
 
 calc_spread<-function(firstdf,compdf){
     #merge the two dataframes
@@ -198,22 +228,9 @@ if(dmso==FALSE){
     calc_spread(mydf_agg,compdf_agg)
 }
 
+#will need to remove this
 if(dmso==TRUE){
-    if(grepl("cp",filetype,fixed=TRUE)==TRUE){
-        metadata=fread("../../metadata/external_metadata/JUMP-Target-1_compound_metadata.tsv")
-        broad_batchid=basename(dirname(plate2))
-        broad_plateid=unique(compdf$Metadata_Plate)[1]
-        broad_barcode=fread(paste0("../../metadata/platemaps/",broad_batchid,"/barcode_platemap.csv"))
-        broad_barcode=broad_barcode %>% filter(Assay_Plate_Barcode==broad_plateid) %>% pull(var=Plate_Map_Name)
-        broad_platemap=fread(paste0("../../metadata/platemaps/",broad_batchid,"/platemap/",broad_barcode,".txt"))
-        names(broad_platemap)[names(broad_platemap)=="well_position"]<-"Metadata_Well"
-        broad_platemap=broad_platemap[,1:2] #only get well_position and broad_sample information
-        broad_metadata=inner_join(broad_platemap,metadata,by="broad_sample")
-        broad_metadata=data.frame(Metadata_Well=broad_metadata$Metadata_Well,Metadata_pert_iname=broad_metadata$pert_iname,Metadata_broad_sample=broad_metadata$broad_sample)
-        broad_metadata=subset(broad_metadata,select=c("Metadata_Well","Metadata_pert_iname"))
-        compdf<-merge(broad_metadata,compdf,by="Metadata_Well")
-        mydf<-merge(broad_metadata,mydf,by="Metadata_Well")
-    }
+    #may get rid of this OR add a conditional to the if statement - if outliers==FALSE - or add an if,else statement here so if outliers==FALSE, then it subsets the data for dmso vals only.
     compdf<-compdf[which(compdf$Metadata_pert_iname=="DMSO"),]
     mydf<-mydf[which(mydf$Metadata_pert_iname=="DMSO"),]
     mydf<-aggregate_data(mydf)
