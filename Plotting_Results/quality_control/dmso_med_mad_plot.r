@@ -65,8 +65,8 @@ if(grepl("py",filetype,fixed=TRUE)==TRUE && grepl("feat",filetype,fixed=TRUE)==T
         filename="PyCytominer-Feature-Normalized"
         filename_sp=gsub("-"," ", filename,fixed=TRUE)
     }
-    mydf=paste0(plate1,"/",plate1,"_normalized_feature_select_batch.csv.gz")
-    compdf=paste0(plate2,"/",basename(plate2),"_normalized_feature_select_batch.csv.gz")
+    mydf=paste0(plate1,"/",plate1,"_normalized.csv.gz")
+    compdf=paste0(plate2,"/",basename(plate2),"_normalized.csv.gz")
 } else if(grepl("py",filetype,fixed=TRUE)==TRUE && grepl("neg",filetype,fixed=TRUE)==TRUE){
     if(dmso==TRUE){
         filename="PyCytominer-NegCon-Normalized-DMSO-Only"
@@ -75,8 +75,8 @@ if(grepl("py",filetype,fixed=TRUE)==TRUE && grepl("feat",filetype,fixed=TRUE)==T
         filename="PyCytominer-NegCon-Normalized"
         filename_sp=gsub("-"," ", filename,fixed=TRUE)
     }
-    mydf=paste0(plate1,"/",plate1,"_normalized_feature_select_negcon_batch.csv.gz")
-    compdf=paste0(plate2,"/",basename(plate2),"_normalized_feature_select_negcon_batch.csv.gz")
+    mydf=paste0(plate1,"/",plate1,"_normalized_negcon.csv.gz")
+    compdf=paste0(plate2,"/",basename(plate2),"_normalized_negcon.csv.gz")
 } else {
     print("There is no matching file")
 }
@@ -106,36 +106,42 @@ aggregate_data<-function(file){
         file_data<-file[,col_start:ncol(file)]
         file<-melt(data.frame(c(file_meta,file_data)),id.vars=c("Metadata_Plate","Metadata_Well"))
     }
-    #melt the df
     names(file)[names(file)=="variable"]<-"Measurement"
     names(file)[names(file)=="value"]<-"Median"
     plate<-unique(file$Metadata_Plate)
-    #get median and mad and rename the grouping variables
-    median_ofdata=aggregate(file$Median,by=list(file$Measurement),median)
-    mad_ofdata=aggregate(file$Median,by=list(file$Measurement),mad)
-    names(median_ofdata)[names(median_ofdata)=="Group.1"]<-"Measurement"
-    names(median_ofdata)[names(median_ofdata)=="x"]<-"Measurement_Median"
-    names(mad_ofdata)[names(mad_ofdata)=="Group.1"]<-"Measurement"
-    names(mad_ofdata)[names(mad_ofdata)=="x"]<-"Measurement_MAD"
-
-    data_med_mad<-merge(median_ofdata,mad_ofdata,by="Measurement")
-    data_med_mad<-cbind(Metadata_Plate=rep(plate,nrow(data_med_mad)),data_med_mad)
-    return(data_med_mad)
+    #if data is from cp, we need to calculate the median and mad to understand how that is affecting the normalized data.
+    if(grepl("cp",filetype,fixed=TRUE)==TRUE){
+        #get median and mad and rename the grouping variables
+        median_ofdata=aggregate(file$Median,by=list(file$Measurement),median)
+        mad_ofdata=aggregate(file$Median,by=list(file$Measurement),mad)
+        names(median_ofdata)[names(median_ofdata)=="Group.1"]<-"Measurement"
+        names(median_ofdata)[names(median_ofdata)=="x"]<-"Measurement_Median"
+        names(mad_ofdata)[names(mad_ofdata)=="Group.1"]<-"Measurement"
+        names(mad_ofdata)[names(mad_ofdata)=="x"]<-"Measurement_MAD"
+        data_med_mad<-merge(median_ofdata,mad_ofdata,by="Measurement")
+        data_med_mad<-cbind(Metadata_Plate=rep(plate,nrow(data_med_mad)),data_med_mad)
+        return(data_med_mad)
+    }else{#else, the normalized data already has the median and MAD
+        return(file)
+    }
 }
 
 #for both cp or pycyto data
-if(dmso==FALSE){
-    mydf_agg<-aggregate_data(mydf)
-    names(mydf_agg)[names(mydf_agg)=="Measurement_Median"]<-"UTSW_Median"
-    names(mydf_agg)[names(mydf_agg)=="Measurement_MAD"]<-"UTSW_MAD"
+if(grepl("cp",filetype,fixed=TRUE)==TRUE) {
+    my_cpdf<-aggregate_data(my_cpdf)
+    names(my_cpdf)[names(my_cpdf)=="Measurement_Median"]<-"UTSW_Median"
+    names(my_cpdf)[names(my_cpdf)=="Measurement_MAD"]<-"UTSW_MAD"
+    comp_cpdf<-aggregate_data(comp_cpdf)
+    names(comp_cpdf)[names(comp_cpdf)=="Measurement_Median"]<-"Broad_Median"
+    names(comp_cpdf)[names(comp_cpdf)=="Measurement_MAD"]<-"Broad_MAD"
+}else if(grepl("py",filetype,fixed=TRUE)==TRUE) {
+    mydf<-aggregate_data(mydf)
+    names(mydf)[names(mydf)=="Measurement_Median"]<-"UTSW_Median"
+    names(mydf)[names(mydf)=="Measurement_MAD"]<-"UTSW_MAD"
+    compdf<-aggregate_data(compdf)compdf_agg<-aggregate_data(compdf)
+    names(compdf)[names(compdf)=="Measurement_Median"]<-"Broad_Median"
+    names(compdf)[names(compdf)=="Measurement_MAD"]<-"Broad_MAD"
 }
-
-if(dmso==FALSE){
-    compdf_agg<-aggregate_data(compdf)
-    names(compdf_agg)[names(compdf_agg)=="Measurement_Median"]<-"Broad_Median"
-    names(compdf_agg)[names(compdf_agg)=="Measurement_MAD"]<-"Broad_MAD"
-}
-
 #take aggregated file
 #find outliers
 #subset aggregated file to remove outliers
