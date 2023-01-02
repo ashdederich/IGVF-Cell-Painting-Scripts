@@ -58,11 +58,7 @@ if(grepl("cp",filetype,fixed=TRUE)==TRUE | outliers==TRUE){
     #merge both dataframes with metadata
     my_cpdf<-merge(broad_metadata,my_cpdf,by="Metadata_Well")
     comp_cpdf<-merge(broad_metadata,comp_cpdf,by="Metadata_Well")
-}
-
-#separate from cp/outlier if statement, becuase we need both files if outlier is TRUE
-#if pycytominer is needed, then select these files
-if(grepl("py",filetype,fixed=TRUE)==TRUE && grepl("feat",filetype,fixed=TRUE)==TRUE){
+}else if(grepl("py",filetype,fixed=TRUE)==TRUE && grepl("feat",filetype,fixed=TRUE)==TRUE){
     if(dmso==TRUE){
         filename="PyCytominer-Feature-Normalized-DMSO-Only"
         filename_sp=gsub("-"," ", filename,fixed=TRUE)
