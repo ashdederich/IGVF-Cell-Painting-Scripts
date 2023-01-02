@@ -50,10 +50,15 @@ mydf=fread(mydf)
 compdf=fread(compdf)
 
 aggregate_data<-function(file){
+    file_meta<-data.frame(Metadata_Plate=file$Metadata_Plate,Metadata_Well=file$Metadata_Well,Metadata_pert_iname=file$Metadata_pert_iname)
+    col_start<-grep("Cells",colnames(file))[[1]]
+    file_data<-file[,col_start:ncol(file)]
+    file<-data.frame(c(file_meta,file_data))
+    #need to add metadata grab for dmso==TRUE
     if(dmso==TRUE){
         file<-melt(file,id.vars=c("Metadata_Plate","Metadata_Well","Metadata_pert_iname"))
-    }
-    else if(dmso==FALSE){
+    }else if(dmso==FALSE){
+        file=subset(file,select=-c(Metadata_pert_iname))
         file<-melt(file,id.vars=c("Metadata_Plate","Metadata_Well"))
     }
     #melt the df
