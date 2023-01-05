@@ -23,7 +23,7 @@ filetype=args[4]
 if(grepl("feat",filetype,fixed=TRUE)==TRUE){
     title="CP-Output-with-Feature-Normalized-Features"
     title_sp=gsub("-"," ",title,fixed=TRUE)
-    plottitle="CP-Ouput-Feature-Normalized"
+    plottitle="CP-Output-Feature-Normalized"
     mydf_meas_file=paste0(mydf,"/",mydf,"_normalized_feature_select_batch.csv.gz")
     compdf_meas_file=paste0(comparisondf,"/",basename(comparisondf),"_normalized_feature_select_batch.csv.gz")
     mydf=paste0(mydf,"/",mydf,".csv.gz")
@@ -36,7 +36,13 @@ if(grepl("feat",filetype,fixed=TRUE)==TRUE){
     compdf_meas_file=paste0(comparisondf,"/",basename(comparisondf),"_normalized_feature_select_negcon_batch.csv.gz")
     mydf=paste0(mydf,"/",mydf,".csv.gz")
     compdf=paste0(comparisondf,"/",basename(comparisondf),".csv.gz")
-} else {
+} else if(grepl("cp",filetype,fixed=TRUE)==TRUE){
+    title="CP-Output"
+    title_sp=gsub("-"," ",title,fixed=TRUE)
+    plottitle=title
+    mydf=paste0(mydf,"/",mydf,".csv.gz")
+    compdf=paste0(comparisondf,"/",basename(comparisondf),".csv.gz")
+}else{
     print("There is no matching filetype")
 }
 
@@ -50,9 +56,12 @@ reshape_data<-function(file){
     return(df_feat)
 }
 
-mydf_feat<-reshape_data(mydf_meas_file)
-comp_feat<-reshape_data(compdf_meas_file)
-features<-intersect(mydf_feat,comp_feat)
+if(grepl("feat",filetype,fixed=TRUE)==TRUE | grepl("neg",filetype,fixed=TRUE)==TRUE){
+    mydf_feat<-reshape_data(mydf_meas_file)
+    comp_feat<-reshape_data(compdf_meas_file)
+    features<-intersect(mydf_feat,comp_feat)
+}
+
 compounds<-c("NVS-PAK1-1","aloxistatin","FK-866","AMG900","LY2109761","dexamethasone","quinidine","TC-S-7004","DMSO")
 
 #getting metadata information for each file and merging with each respective dataframe
@@ -88,19 +97,21 @@ mydf=fread(mydf)
 plateid=unique(mydf$Metadata_Plate)
 mydf_new=merge(broad_metadata,mydf,by="Metadata_Well")
 
-subset_and_melt<-function(df,compounds=compounds,features=features){
+subset_and_melt<-function(df,cmpds,features=features){
     df$Metadata_broad_sample[which(df$Metadata_pert_iname=="")]<-"DMSO"
-    df_subset=df[df$Metadata_pert_iname %in% compounds,] # only get JUMP cmpds
+    df_subset=df[df$Metadata_pert_iname %in% cmpds,] # only get JUMP cmpds
     df_melt<-melt(df_subset)
     names(df_melt)[names(df_melt)=="variable"]<-"Measurement"
     names(df_melt)[names(df_melt)=="value"]<-"Median"
-    df_melt=df_melt[df_melt$Measurement %in% features,] #only get measurements that pycytominer selected as variable
+    if(grepl("feat",filetype,fixed=TRUE)==TRUE | grepl("neg",filetype,fixed=TRUE)==TRUE){
+        df_melt=df_melt[df_melt$Measurement %in% features,] #only get measurements that pycytominer selected as variable
+    }
     return(df_melt)
 }
 
-mydf_formerge<-subset_and_melt(mydf_new,compounds,features)
+mydf_formerge<-subset_and_melt(mydf_new,compounds)
 names(mydf_formerge)[names(mydf_formerge)=="Median"]<-"UTSW_Median"
-compdf_formerge<-subset_and_melt(comparisondf,compounds,features)
+compdf_formerge<-subset_and_melt(comparisondf,compounds)
 names(compdf_formerge)[names(compdf_formerge)=="Median"]<-"Broad_Median"
 
 #merge data sheets by type
