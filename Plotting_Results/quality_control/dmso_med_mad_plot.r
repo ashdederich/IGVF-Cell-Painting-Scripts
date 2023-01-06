@@ -166,15 +166,15 @@ if(grepl("py",filetype,fixed=TRUE)==TRUE) {
 #this is working
 #now set up if, else statement for cp or pycytominer files
 #if dmso is false and outlier is true, then perform outlier_removal function
-if(outliers==TRUE){
-    if(grepl("cp",filetype,fixed=TRUE)==TRUE){
-        my_cpdf=outlier_removal(cp_df=my_cpdf)
-        comp_cpdf=outlier_removal(cp_df=comp_cpdf)
-    }else if(grepl("py",filetype,fixed=TRUE)==TRUE){
-        mydf=outlier_removal(cp_df=my_cpdf,py_df=mydf)
-        compdf=outlier_removal(cp_df=comp_cpdf,py_df=compdf)
-    }
-}
+#if(outliers==TRUE){
+#    if(grepl("cp",filetype,fixed=TRUE)==TRUE){
+#        my_cpdf=outlier_removal(cp_df=my_cpdf)
+#        comp_cpdf=outlier_removal(cp_df=comp_cpdf)
+#    }else if(grepl("py",filetype,fixed=TRUE)==TRUE){
+#        mydf=outlier_removal(cp_df=my_cpdf,py_df=mydf)
+#        compdf=outlier_removal(cp_df=comp_cpdf,py_df=compdf)
+#    }
+#}
 
 calc_spread<-function(firstdf,compdf){
     #merge the two dataframes
