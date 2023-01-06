@@ -121,14 +121,18 @@ aggregate_data<-function(file,out=FALSE){
 #out is FALSE for both of these - out is TRUE in the outliers function
 if(grepl("cp",filetype,fixed=TRUE)==TRUE) {
     my_cpdf<-aggregate_data(file=my_cpdf)
-    names(my_cpdf)[names(my_cpdf)=="Measurement_Median"]<-"UTSW_Median"
-    names(my_cpdf)[names(my_cpdf)=="Measurement_MAD"]<-"UTSW_MAD"
-    comp_cpdf<-aggregate_data(file=comp_cpdf)
-    names(comp_cpdf)[names(comp_cpdf)=="Measurement_Median"]<-"Broad_Median"
-    names(comp_cpdf)[names(comp_cpdf)=="Measurement_MAD"]<-"Broad_MAD"
-}
-
-if(grepl("py",filetype,fixed=TRUE)==TRUE) {
+    comp_cpdf<-aggregate_data(comp_cpdf)
+    if(summary==TRUE){
+        names(my_cpdf)[names(my_cpdf)=="Measurement_Median"]<-"UTSW_Median"
+        names(my_cpdf)[names(my_cpdf)=="Measurement_MAD"]<-"UTSW_MAD"
+        comp_cpdf<-aggregate_data(file=comp_cpdf)
+        names(comp_cpdf)[names(comp_cpdf)=="Measurement_Median"]<-"Broad_Median"
+        names(comp_cpdf)[names(comp_cpdf)=="Measurement_MAD"]<-"Broad_MAD"
+    }else{
+        names(my_cpdf)[names(my_cpdf)=="Normalized_Value"]<-"UTSW_Normalized_Value"
+        names(comp_cpdf)[names(comp_cpdf)=="Normalized_Value"]<-"Broad_Normalized_Value"
+    }
+}else if(grepl("py",filetype,fixed=TRUE)==TRUE) {
     mydf<-aggregate_data(mydf)
     names(mydf)[names(mydf)=="Normalized_Value"]<-"UTSW_Normalized_Value"
     compdf<-aggregate_data(compdf)
@@ -178,14 +182,10 @@ if(grepl("py",filetype,fixed=TRUE)==TRUE) {
 
 calc_spread<-function(firstdf,compdf){
     #merge the two dataframes
-    if(grepl("py",filetype,fixed=TRUE)==TRUE){
-        merged<-merge(firstdf,compdf,by=c("Metadata_Plate","Metadata_Well","Metadata_pert_iname","Measurement"))
-    }else{
-        merged<-merge(firstdf,compdf,by=c("Metadata_Plate","Measurement"))
-    }
+    merged<-merge(firstdf,compdf,by=c("Metadata_Plate","Metadata_Well","Metadata_pert_iname","Measurement"))
     #median plots
     if(dmso==TRUE){
-        if(grepl("cp",filetype,fixed=TRUE)==TRUE){
+        if(summary==TRUE){
             #median plot
             ggplot(merged) + geom_point(aes(x=1:nrow(merged),y=UTSW_Median,color="UTSW_Median"),show.legend=TRUE) + geom_point(aes(x=1:nrow(merged),y=Broad_Median,color="Broad_Median"),show.legend=TRUE) + labs(title=paste0("Median DMSO Values per Feature, CellProfiler Output\nPlate ",unique(merged$Metadata_Plate)),x="All DMSO Measurements",y="Median Feature Value",fill="Group") + guides(color=guide_legend("Group")) + geom_line(aes(x=1:nrow(merged),y=quantile(merged[,"UTSW_Median"],prob=0.95,na.rm=TRUE),color="UTSW_Median"),size=0.8) + geom_line(aes(x=1:nrow(merged),y=quantile(merged[,"Broad_Median"],prob=0.95,na.rm=TRUE),color="Broad_Median"),size=0.8) + scale_y_continuous(breaks=seq(round(min(merged$UTSW_Median,na.rm=TRUE),0),round(max(merged$UTSW_Median,na.rm=TRUE)+700,0),by=500))
             ggsave(paste0("MedianValues_",filename,"_",unique(merged$Metadata_Plate),".png"), type = "cairo")
@@ -211,7 +211,7 @@ calc_spread<-function(firstdf,compdf){
             ggsave(paste0("NormalizedValues_",filename,"_",unique(merged$Metadata_Plate),".png"), type = "cairo",height=7,width=12,units="in")
         }
     }else{
-        if(grepl("cp",filetype,fixed=TRUE)==TRUE){
+        if(summary==TRUE){
             #median plot
             ggplot(merged) + geom_point(aes(x=1:nrow(merged),y=UTSW_Median,color="UTSW_Median"),show.legend=TRUE) + geom_point(aes(x=1:nrow(merged),y=Broad_Median,color="Broad_Median"),show.legend=TRUE) + labs(title=paste0("Median Value per Feature, CellProfiler Output\nPlate ",unique(merged$Metadata_Plate)),x="All Measurements",y="Median Feature Value",fill="Group") + guides(color=guide_legend("Group")) + geom_line(aes(x=1:nrow(merged),y=quantile(merged[,"UTSW_Median"],prob=0.95,na.rm=TRUE),color="UTSW_Median"),size=0.8) + geom_line(aes(x=1:nrow(merged),y=quantile(merged[,"Broad_Median"],prob=0.95,na.rm=TRUE),color="Broad_Median"),size=0.8) + scale_y_continuous(breaks=seq(round(min(merged$UTSW_Median,na.rm=TRUE),0),round(max(merged$UTSW_Median,na.rm=TRUE)+700,0),by=500))
             ggsave(paste0("MedianValues_",filename,"_",unique(merged$Metadata_Plate),".png"), type = "cairo")
