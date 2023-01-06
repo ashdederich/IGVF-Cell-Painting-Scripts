@@ -13,8 +13,7 @@ plate1=args[1]
 plate2=args[2]
 filetype=args[3]
 dmso=args[4]
-layerremoval=args[5]
-outliers=args[6]
+summary=args[5]
 
 #adding default option for dmso boolean if argument not given
 if(dmso==""){
@@ -32,7 +31,7 @@ if(dmso==""){
 plate1=sub("\\/.*","",plate1)
 
 #create an if outlier or if cp ==true, then join with metadata
-if(grepl("cp",filetype,fixed=TRUE)==TRUE | outliers==TRUE){
+if(grepl("cp",filetype,fixed=TRUE)==TRUE){
     if(dmso==TRUE){
         filename="CellProfiler-DMSO-Only"
         filename_sp=gsub("-"," ", filename,fixed=TRUE)
@@ -101,7 +100,8 @@ aggregate_data<-function(file,out=FALSE){
     #replace Inf with NA
     file$Normalized_Value[which(file$Normalized_Value==-Inf)]<-NA
     #if data is from cp, we need to calculate the median and mad to understand how that is affecting the normalized data.
-    if(grepl("cp",filetype,fixed=TRUE)==TRUE | out==TRUE){
+    #if(grepl("cp",filetype,fixed=TRUE)==TRUE | out==TRUE){
+    if(summary==TRUE){
         #get median and mad and rename the grouping variables
         median_ofdata=aggregate(file$Normalized_Value,by=list(file$Measurement),median)
         mad_ofdata=aggregate(file$Normalized_Value,by=list(file$Measurement),mad)
