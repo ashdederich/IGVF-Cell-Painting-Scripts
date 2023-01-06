@@ -180,6 +180,10 @@ if(grepl("cp",filetype,fixed=TRUE)==TRUE) {
 #    }
 #}
 
+getFirstDigit <- function(x) {
+    floor(x / (10 ^ floor(log10(x))))
+}
+
 calc_spread<-function(firstdf,compdf){
     #merge the two dataframes
     merged<-merge(firstdf,compdf,by=c("Metadata_Plate","Metadata_Well","Metadata_pert_iname","Measurement"))
@@ -207,7 +211,22 @@ calc_spread<-function(firstdf,compdf){
             }else{
                 plot_min=min_broad
             }
-            ggplot(merged) + geom_point(aes(x=1:nrow(merged),y=UTSW_Normalized_Value,color="UTSW_Normalized_Value"),show.legend=TRUE) + geom_point(aes(x=1:nrow(merged),y=Broad_Normalized_Value,color="Broad_Normalized_Value"),show.legend=TRUE) + labs(title=paste0("Normalized Values per Well\n",filename_sp,"\nPlate ",unique(merged$Metadata_Plate)),x="All DMSO Measurements",y="Normalized Feature Value",fill="Group") + guides(color=guide_legend("Group")) + geom_line(aes(x=1:nrow(merged),y=quantile(merged[,"UTSW_Normalized_Value"],prob=0.95,na.rm=TRUE),color="UTSW_Normalized_Value"),size=2) + geom_line(aes(x=1:nrow(merged),y=quantile(merged[,"Broad_Normalized_Value"],prob=0.95,na.rm=TRUE),color="Broad_Normalized_Value"),size=2) + geom_line(aes(x=1:nrow(merged),y=quantile(merged[,"UTSW_Normalized_Value"],prob=0.05,na.rm=TRUE),color="UTSW_Normalized_Value"),size=2) + geom_line(aes(x=1:nrow(merged),y=quantile(merged[,"Broad_Normalized_Value"],prob=0.05,na.rm=TRUE),color="Broad_Normalized_Value"),size=2) + scale_y_continuous(breaks=seq(round(plot_min-0.1,1),round(plot_max+0.25,1),by=0.5))
+            if((plot_max-plot_min)/20<1){
+                interval=round((plot_max-plot_min)/20,1)
+            }else if((plot_max-plot_min)/20>=1 & (plot_max-plot_min)/20<=10){
+                interval=ceiling((plot_max-plot_min)/20)
+            }else if((plot_max-plot_min)/20>=10 & (plot_max-plot_min)/20<100){
+                interval=round((plot_max-plot_min)/20,0)
+            }else if((plot_max-plot_min)/20>=100){
+                if(round((plot_max-plot_min)/20,0)%%100<40){
+                    interval=round((plot_max-plot_min)/20,-2)
+                }else if(round((plot_max-plot_min)/20,0)>40 & round((plot_max-plot_min)/20,0)<60){
+                    interval=as.numeric(paste0(getFirstDigit(round((plot_max-plot_min)/20,0)),50))
+                }else if(round((plot_max-plot_min)/20,0)>60){
+                    interval=round((plot_max-plot_min)/20,-2)
+                }
+            }
+            ggplot(merged) + geom_point(aes(x=1:nrow(merged),y=UTSW_Normalized_Value,color="UTSW_Normalized_Value"),show.legend=TRUE) + geom_point(aes(x=1:nrow(merged),y=Broad_Normalized_Value,color="Broad_Normalized_Value"),show.legend=TRUE) + labs(title=paste0("Normalized Values per Well\n",filename_sp,"\nPlate ",unique(merged$Metadata_Plate)),x="All DMSO Measurements",y="Normalized Feature Value",fill="Group") + guides(color=guide_legend("Group")) + geom_line(aes(x=1:nrow(merged),y=quantile(merged[,"UTSW_Normalized_Value"],prob=0.95,na.rm=TRUE),color="UTSW_Normalized_Value"),size=2) + geom_line(aes(x=1:nrow(merged),y=quantile(merged[,"Broad_Normalized_Value"],prob=0.95,na.rm=TRUE),color="Broad_Normalized_Value"),size=2) + geom_line(aes(x=1:nrow(merged),y=quantile(merged[,"UTSW_Normalized_Value"],prob=0.05,na.rm=TRUE),color="UTSW_Normalized_Value"),size=2) + geom_line(aes(x=1:nrow(merged),y=quantile(merged[,"Broad_Normalized_Value"],prob=0.05,na.rm=TRUE),color="Broad_Normalized_Value"),size=2) + scale_y_continuous(breaks=seq(round(plot_min-0.1,1),round(plot_max+0.25,1),by=interval))
             ggsave(paste0("NormalizedValues_",filename,"_",unique(merged$Metadata_Plate),".png"), type = "cairo",height=7,width=12,units="in")
         }
     }else{
@@ -233,7 +252,22 @@ calc_spread<-function(firstdf,compdf){
             }else{
                 plot_min=min_broad
             }
-            ggplot(merged) + geom_point(aes(x=1:nrow(merged),y=UTSW_Normalized_Value,color="UTSW_Normalized_Value"),show.legend=TRUE) + geom_point(aes(x=1:nrow(merged),y=Broad_Normalized_Value,color="Broad_Normalized_Value"),show.legend=TRUE) + labs(title=paste0("Normalized Values per Well\n",filename_sp,"\nPlate ",unique(merged$Metadata_Plate)),x="All Measurements",y="Normalized Feature Value",fill="Group") + guides(color=guide_legend("Group")) + geom_line(aes(x=1:nrow(merged),y=quantile(merged[,"UTSW_Normalized_Value"],prob=0.95,na.rm=TRUE),color="UTSW_Normalized_Value"),size=2) + geom_line(aes(x=1:nrow(merged),y=quantile(merged[,"Broad_Normalized_Value"],prob=0.95,na.rm=TRUE),color="Broad_Normalized_Value"),size=2) + geom_line(aes(x=1:nrow(merged),y=quantile(merged[,"UTSW_Normalized_Value"],prob=0.05,na.rm=TRUE),color="UTSW_Normalized_Value"),size=2) + geom_line(aes(x=1:nrow(merged),y=quantile(merged[,"Broad_Normalized_Value"],prob=0.05,na.rm=TRUE),color="Broad_Normalized_Value"),size=2) + scale_y_continuous(breaks=seq(round(plot_min-0.1,1),round(plot_max+0.25,1),by=0.5))
+            if((plot_max-plot_min)/20<1){
+                interval=round((plot_max-plot_min)/20,1)
+            }else if((plot_max-plot_min)/20>=1 & (plot_max-plot_min)/20<=10){
+                interval=ceiling((plot_max-plot_min)/20)
+            }else if((plot_max-plot_min)/20>=10 & (plot_max-plot_min)/20<100){
+                interval=round((plot_max-plot_min)/20,0)
+            }else if((plot_max-plot_min)/20>=100){
+                if(round((plot_max-plot_min)/20,0)%%100<40){
+                    interval=round((plot_max-plot_min)/20,-2)
+                }else if(round((plot_max-plot_min)/20,0)>40 & round((plot_max-plot_min)/20,0)<60){
+                    interval=as.numeric(paste0(getFirstDigit(round((plot_max-plot_min)/20,0)),50))
+                }else if(round((plot_max-plot_min)/20,0)>60){
+                    interval=round((plot_max-plot_min)/20,-2)
+                }
+            }
+            ggplot(merged) + geom_point(aes(x=1:nrow(merged),y=UTSW_Normalized_Value,color="UTSW_Normalized_Value"),show.legend=TRUE) + geom_point(aes(x=1:nrow(merged),y=Broad_Normalized_Value,color="Broad_Normalized_Value"),show.legend=TRUE) + labs(title=paste0("Normalized Values per Well\n",filename_sp,"\nPlate ",unique(merged$Metadata_Plate)),x="All Measurements",y="Normalized Feature Value",fill="Group") + guides(color=guide_legend("Group")) + geom_line(aes(x=1:nrow(merged),y=quantile(merged[,"UTSW_Normalized_Value"],prob=0.95,na.rm=TRUE),color="UTSW_Normalized_Value"),size=2) + geom_line(aes(x=1:nrow(merged),y=quantile(merged[,"Broad_Normalized_Value"],prob=0.95,na.rm=TRUE),color="Broad_Normalized_Value"),size=2) + geom_line(aes(x=1:nrow(merged),y=quantile(merged[,"UTSW_Normalized_Value"],prob=0.05,na.rm=TRUE),color="UTSW_Normalized_Value"),size=2) + geom_line(aes(x=1:nrow(merged),y=quantile(merged[,"Broad_Normalized_Value"],prob=0.05,na.rm=TRUE),color="Broad_Normalized_Value"),size=2) + scale_y_continuous(breaks=seq(round(plot_min-0.1,1),round(plot_max+0.25,1),by=interval))
             ggsave(paste0("NormalizedValues_",filename,"_",unique(merged$Metadata_Plate),".png"), type = "cairo",height=7,width=12,units="in")
         }
     }
