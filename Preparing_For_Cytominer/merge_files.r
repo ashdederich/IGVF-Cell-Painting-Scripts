@@ -10,7 +10,7 @@ file_1=args[1]
 file_2=args[2]
 file_3=args[3]
 
-
+#function to make files back into short and wide format
 reshape_files<-function(a_file){
     data<-fread(a_file)
     data_cast<-cast(data,plate+Metadata_Well~variable,value="Median",fun.aggregate=sum)
