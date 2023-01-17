@@ -15,6 +15,10 @@ filetype=args[3]
 dmso=args[4]
 summary=args[5]
 
+if(grepl("cp",filetype,fixed=TRUE)==TRUE){
+    summary=TRUE
+}
+
 #adding default option for dmso boolean if argument not given
 if(dmso==""){
     dmso=FALSE
@@ -125,7 +129,6 @@ if(grepl("cp",filetype,fixed=TRUE)==TRUE) {
     if(summary==TRUE){
         names(my_cpdf)[names(my_cpdf)=="Measurement_Median"]<-"UTSW_Median"
         names(my_cpdf)[names(my_cpdf)=="Measurement_MAD"]<-"UTSW_MAD"
-        comp_cpdf<-aggregate_data(file=comp_cpdf)
         names(comp_cpdf)[names(comp_cpdf)=="Measurement_Median"]<-"Broad_Median"
         names(comp_cpdf)[names(comp_cpdf)=="Measurement_MAD"]<-"Broad_MAD"
     }else{
@@ -186,7 +189,11 @@ getFirstDigit <- function(x) {
 
 calc_spread<-function(firstdf,compdf){
     #merge the two dataframes
-    merged<-merge(firstdf,compdf,by=c("Metadata_Plate","Metadata_Well","Metadata_pert_iname","Measurement"))
+    if(summary==TRUE){
+        merged<-merge(firstdf,compdf,by=c("Metadata_Plate","Measurement"))
+    }else{
+        merged<-merge(firstdf,compdf,by=c("Metadata_Plate","Metadata_Well","Metadata_pert_iname","Measurement"))
+    }
     #median plots
     if(dmso==TRUE){
         if(summary==TRUE){
