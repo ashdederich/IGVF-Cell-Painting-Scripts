@@ -4,7 +4,7 @@ library(data.table)
 library(reshape)
 #library(stringr)
 #library(ggplot2)
-#library(dplyr)
+library(dplyr)
 
 args=commandArgs(trailingOnly=TRUE)
 
@@ -41,12 +41,6 @@ narrow_data<-function(input_file){
     return(file)
 }
 
-#NOTE - I think it would be best to make this whole script just a bunch of functions, where functions call other functions instead of having loose code like this below.
-plate1=narrow_data(plate1)
-plate2=narrow_data(plate2)
-plate3=narrow_data(plate3)
-plate4=narrow_data(plate4)
-
 reshape_data<-function(df){
     df_new<-df[,grep("Cells",colnames(df))[[1]]:ncol(df)]
     df<-cbind(Metadata_Plate=df$Metadata_Plate,Metadata_Well=df$Metadata_Well,Metadata_pert_iname=df$Metadata_pert_iname,df_new)
@@ -57,14 +51,14 @@ reshape_data<-function(df){
 }
 
 unique_features<-function(input_file){
-    meas<-as.vector(unique(input_file$Measurementf))
+    meas<-as.vector(unique(input_file$Measurement))
     return(meas)
 }
 
 shared_features<-function(file1,file2,file3,file4){
     filelist<-list(file1,file2,file3,file4)
-    file_results<-lapply(filelist,unique_features)
-    meas<-Reduce(intersect,file_results)
+    unique_measurements_each<-lapply(filelist,unique_features)
+    meas<-Reduce(intersect,unique_measurements_each)
     return(meas)
 }
 
@@ -74,10 +68,12 @@ reduce_to_shared_features<-function(input_file,shared_measurements){
 }
 
 join_replicates<-function(file1,file2,file3,file4){
-    #get list of unique measurements from each file and return those that are shared
-    shared_meas<-shared_features(file1,file2,file3,file4)
     filelist<-list(file1,file2,file3,file4)
-    file_shared_meas<-lapply(filelist,reduce_to_shared_features)
+    files_narrowed<-lapply(filelist,narrow_data)
+    files_reshaped<-lapply(files_narrowed,reshape_data)
+    #get list of unique measurements from each file and return those that are shared
+    shared_meas<-shared_features(files_reshaped[[1]],files_reshaped[[2]],files_reshaped[[3]],files_reshaped[[4]])
+    file_shared_meas<-lapply(files_reshaped,reduce_to_shared_features,shared_measurements=shared_meas)
     file1<-file_shared_meas[[1]]
     file2<-file_shared_meas[[2]]
     file3<-file_shared_meas[[3]]
@@ -86,6 +82,40 @@ join_replicates<-function(file1,file2,file3,file4){
     rbind_long<-rbind(file1,file2,file3,file4)
     return(rbind_long)
 }
+
+corr_between_replicates<-function(df){
+    #I need to calculate the pearson correlation between all replicates in each feature
+    df %>% group_by(c(Measurement,Metadata_pert_iname))
+}
+
+calc_percent_replicating<-function(file1,file2,file3,file4){
+    rbind_file<-join_replicates(file1,file2,file3,file4)
+    repcorr<-rbind_file %>% group_by(Measurement) %>% summarise(rep_corr = cor(Value,Metadata_pert_iname,method='pearson')) #I'll have to change this to have each compound value in a separate column - so when I do join_replicates, instead of rbind, do a join based on measurement and compound name.
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #create replicate information
 broad_well<-paste0(datafile$Metadata_broad_sample,"_",datafile$Metadata_Plate)
