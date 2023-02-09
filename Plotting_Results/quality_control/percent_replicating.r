@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 
 library(data.table)
-#library(reshape)
+library(reshape)
 #library(stringr)
 #library(ggplot2)
 #library(dplyr)
@@ -49,14 +49,43 @@ plate4=narrow_data(plate4)
 
 reshape_data<-function(df){
     df_new<-df[,grep("Cells",colnames(df))[[1]]:ncol(df)]
-    df<-cbind(Metadata_pert_iname=df$Metadata_pert_iname,df_new)
-    df_melt<-melt(df)
+    df<-cbind(Metadata_Plate=df$Metadata_Plate,Metadata_Well=df$Metadata_Well,Metadata_pert_iname=df$Metadata_pert_iname,df_new)
+    df_melt<-melt(df,id.vars=c("Metadata_Plate","Metadata_Well","Metadata_pert_iname"))
     names(df_melt)[names(df_melt)=="variable"]<-"Measurement"
-    names(df_melt)[names(df_melt)=="value"]<-"Median"
+    names(df_melt)[names(df_melt)=="value"]<-("Value")
     return(df_melt)
 }
-#STOPPED HERE
 
+unique_features<-function(input_file){
+    meas<-as.vector(unique(input_file$Measurementf))
+    return(meas)
+}
+
+shared_features<-function(file1,file2,file3,file4){
+    filelist<-list(file1,file2,file3,file4)
+    file_results<-lapply(filelist,unique_features)
+    meas<-Reduce(intersect,file_results)
+    return(meas)
+}
+
+reduce_to_shared_features<-function(input_file,shared_measurements){
+    input_file<-input_file[which(input_file$Measurement%in%shared_measurements),]
+    return(input_file)
+}
+
+join_replicates<-function(file1,file2,file3,file4){
+    #get list of unique measurements from each file and return those that are shared
+    shared_meas<-shared_features(file1,file2,file3,file4)
+    filelist<-list(file1,file2,file3,file4)
+    file_shared_meas<-lapply(filelist,reduce_to_shared_features)
+    file1<-file_shared_meas[[1]]
+    file2<-file_shared_meas[[2]]
+    file3<-file_shared_meas[[3]]
+    file4<-file_shared_meas[[4]]
+    #row bind
+    rbind_long<-rbind(file1,file2,file3,file4)
+    return(rbind_long)
+}
 
 #create replicate information
 broad_well<-paste0(datafile$Metadata_broad_sample,"_",datafile$Metadata_Plate)
