@@ -83,16 +83,38 @@ join_replicates<-function(file1,file2,file3,file4){
     return(rbind_long)
 }
 
-corr_between_replicates<-function(df){
-    #I need to calculate the pearson correlation between all replicates in each feature
-    df %>% group_by(c(Measurement,Metadata_pert_iname))
-}
-
-calc_percent_replicating<-function(file1,file2,file3,file4){
+calc_corr_replicates<-function(file1,file2,file3,file4){
     rbind_file<-join_replicates(file1,file2,file3,file4)
     rbind_file<-cast(rbind_file,Metadata_Well+Metadata_pert_iname+Measurement~Metadata_Plate,value="Value")
-    x_corr<-cor(t(subset(rbind_file,select=-c(Metadata_Well,Metadata_pert_iname,Measurement))))
+    corr<-data.frame(matrix(NA,nrow=nrow(rbind_file),ncol=6))
+    for(row in nrow(rbind_file)){
+        corr[row]
+    }
+
+    #can't do this - the correlation matrix takes up too much memory (~128Gb).
+    x_corr<-cor(t(reps_only))
+    x_corr[upper.tri(x_corr,diag=TRUE)]<-NA
+    rownames(x_corr)<-colnames(x_corr)<-colnames(reps_only)
+    x_corr<-na.omit(reshape::melt(t(x_corr)))
+    x_corr<-x_corr[order(x_corr$X1,x_corr$X2),]
+    return(x_corr)
 }
+
+calc_corr_nonreplicates<-function(file1,file2,file3,file4){
+    rbind_file<-join_replicates(file1,file2,file3,file4)
+    rbind_file<-data.frame(Metadata_Plate=rbind_file$Metadata_Plate,Metadata_Well=rbind_file$Metadata_Well,Metadata_pert_iname=rbind_file$Metadata_pert_iname,Measurement=rbind_file$Measurement,Value=sample(rbind_file$Value))
+    rbind_file<-cast(rbind_file,Metadata_Well+Metadata_pert_iname+Measurement~Metadata_Plate,value="Value")
+    reps_only<-rbind_file[,-c(1:3)]
+    x_corr<-cor(t(reps_only))
+    x_corr[upper.tri(x_corr,diag=TRUE)]<-NA
+    rownames(x_corr)<-colnames(x_corr)<-colnames(reps_only)
+    x_corr<-na.omit(reshape::melt(t(x_corr)))
+    x_corr<-x_corr[order(x_corr$X1,x_corr$X2),]
+    return(x_corr)
+}
+
+df_new_rand<-data.frame(Metadata_Well=df_new$Metadata_Well,broad_replicate=sample(df_new$broad_replicate),Measurement=df_new$Measurement,Median=df_new$Median)
+
 
 
 
