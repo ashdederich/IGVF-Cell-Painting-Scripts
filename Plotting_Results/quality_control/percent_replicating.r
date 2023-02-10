@@ -4,7 +4,7 @@ library(data.table)
 library(reshape)
 #library(stringr)
 #library(ggplot2)
-library(dplyr)
+#library(dplyr)
 
 args=commandArgs(trailingOnly=TRUE)
 
@@ -90,11 +90,15 @@ corr_between_replicates<-function(df){
 
 calc_percent_replicating<-function(file1,file2,file3,file4){
     rbind_file<-join_replicates(file1,file2,file3,file4)
-    repcorr<-rbind_file %>% group_by(Measurement) %>% summarise(rep_corr = cor(Value,Metadata_pert_iname,method='pearson')) #I'll have to change this to have each compound value in a separate column - so when I do join_replicates, instead of rbind, do a join based on measurement and compound name.
+    rbind_file<-cast(rbind_file,Metadata_Well+Metadata_pert_iname+Measurement~Metadata_Plate,value="Value")
+    x_corr<-cor(t(subset(rbind_file,select=-c(Metadata_Well,Metadata_pert_iname,Measurement))))
 }
 
 
 
+    
+    
+    
 
 
 
