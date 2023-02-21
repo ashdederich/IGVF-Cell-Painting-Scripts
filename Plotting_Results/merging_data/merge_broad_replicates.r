@@ -5,12 +5,27 @@ library(data.table)
 library(reshape)
 
 args=commandArgs(trailingOnly=TRUE)
-file_1=args[1]
-file_2=args[2]
-file_3=args[3]
-file_4=args[4]
+plate1=args[1]
+plate2=args[2]
+plate3=args[3]
+plate4=args[4]
 filetype=args[5]
 
+if(grepl("feat",filetype,fixed=TRUE)==TRUE){
+        filetype="Feature-Normalized"
+        file_1=paste0(plate1,"/",plate1,"_normalized_feature_select_batch.csv.gz")
+        file_2=paste0(plate2,"/",plate2,"_normalized_feature_select_batch.csv.gz")
+        file_3=paste0(plate3,"/",plate3,"_normalized_feature_select_batch.csv.gz")
+        file_4=paste0(plate4,"/",plate4,"_normalized_feature_select_batch.csv.gz")
+} else if(grepl("neg",filetype,fixed=TRUE)==TRUE){
+        filetype="Negative-Control-Normalized"
+        file_1=paste0(plate1,"/",plate1,"_normalized_feature_select_negcon_batch.csv.gz")
+        file_2=paste0(plate2,"/",plate2,"_normalized_feature_select_negcon_batch.csv.gz")
+        file_3=paste0(plate3,"/",plate3,"_normalized_feature_select_negcon_batch.csv.gz")
+        file_4=paste0(plate4,"/",plate4,"_normalized_feature_select_negcon_batch.csv.gz")
+} else {
+    print("There is no matching file")
+}
 
 #first need to reshape the dataframe to be tall and skinny for ease of merging the files
 
