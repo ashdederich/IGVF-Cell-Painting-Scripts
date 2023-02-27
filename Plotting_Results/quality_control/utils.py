@@ -485,7 +485,7 @@ suffix = '_normalized_feature_select_negcon_batch.csv.gz',n_replicates=4):
     not done, done at the plate level by passing 'sphere=plate', or 
     done at the batch level by passing 'sphere=batch'.
     """
-    metadata_compound_name = 'Metadata_broad_sample'
+    metadata_compound_name = 'Metadata_pert_iname'
     n_samples_strong = 10000
 
     data_dict = {}
