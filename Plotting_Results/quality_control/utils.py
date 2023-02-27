@@ -37,7 +37,7 @@ def remove_negcon_empty_wells(df):
     """return dataframe of non-negative-control wells"""
     df = (
         df.query('Metadata_control_type!="negcon"')
-        .dropna(subset=['Metadata_broad_sample'])
+        .dropna(subset=['Metadata_pert_iname'])
         .reset_index(drop=True)
     )
     return df
