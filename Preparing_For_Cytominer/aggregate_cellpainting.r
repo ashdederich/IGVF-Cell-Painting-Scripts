@@ -11,14 +11,14 @@ library(R.utils)
 #input file - i.e. IGVFCells.csv.gz
 datafile=args[1]
 fileheader=args[2]
-plateid=args[]3
+plateid=args[3]
 
 aggregate_data<-function(input_file){
     #get the filename
     filename<-sub("\\.csv.gz.*","",input_file)
     #get the cell location to append to the feature name
     cell_location<-gsub(paste0(".*",fileheader,"|.csv.gz*"),"",input_file)
-    input_file=fread(input_file)
+    input_file=fread(input_file,blank.lines.skip=FALSE)
     # only keep Metadata_Plate and Metadata_Well and the measurements
     file<-input_file[,which(colnames(input_file)=='AreaShape_Area'):ncol(input_file)]
     #add the cellular location to the beginning of the measurement for each input file
