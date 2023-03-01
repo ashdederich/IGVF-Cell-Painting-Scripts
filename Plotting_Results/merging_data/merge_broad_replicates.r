@@ -3,6 +3,7 @@
 
 library(data.table)
 library(reshape)
+library(R.utils)
 
 args=commandArgs(trailingOnly=TRUE)
 plate1=args[1]
@@ -50,7 +51,7 @@ bind_and_cast<-function(file1,file2,file3,file4){
     #rbind the files together into one, cast it, and write is as a csv file
     binded<-rbind(reshaped[[1]],reshaped[[2]],reshaped[[3]],reshaped[[4]])
     binded_cast<-cast(binded,Metadata_Plate+Metadata_broad_sample+Metadata_pert_iname+Metadata_Well~Measurement,value="Median",fun.aggregate=sum)
-    write.csv(binded_cast,paste0(filetype,"_merged.csv"),row.names = FALSE)
+    write.csv(binded_cast,gzfile(paste0(filetype,"_merged.csv.gz")),row.names = FALSE)
 }
 
 #now need to cast the dataframe
