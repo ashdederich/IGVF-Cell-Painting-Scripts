@@ -562,7 +562,7 @@ suffix = '_normalized_feature_select_negcon_batch.csv.gz',n_replicates=4):
     corr = corr.melt(var_name='groups',value_name='vals')
 
     null_95perc=np.nanpercentile(null_corr,95)
-    plt.rcParams["figure.figsize"] = [7.50, 3.50]
+    plt.rcParams["figure.figsize"] = [4, 7.50]
     plt.rcParams["figure.autolayout"] = True
     sns_vp=sns.violinplot(data=corr,x='groups',y='vals')
     sns_vp.axhline(null_95perc,color='r',ls='--')
