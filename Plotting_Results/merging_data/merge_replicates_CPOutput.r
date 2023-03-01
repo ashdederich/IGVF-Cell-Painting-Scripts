@@ -3,14 +3,13 @@
 
 library(data.table)
 library(reshape)
+library(R.utils)
 
 args=commandArgs(trailingOnly=TRUE)
 file_1=args[1]
 file_2=args[2]
 file_3=args[3]
 file_4=args[4]
-filetype=args[5]
-
 
 #first need to reshape the dataframe to be tall and skinny for ease of merging the files
 
@@ -34,7 +33,7 @@ bind_and_cast<-function(file1,file2,file3,file4){
     #rbind the files together into one, cast it, and write is as a csv file
     binded<-rbind(reshaped[[1]],reshaped[[2]],reshaped[[3]],reshaped[[4]])
     binded_cast<-cast(binded,Metadata_Plate+Metadata_Well~Measurement,value="Median",fun.aggregate=sum)
-    write.csv(binded_cast,paste0(filetype,"_merged.csv"),row.names = FALSE)
+    write.csv(binded_cast,gzfile("CellProfiler-Output_merged.csv.gz"),row.names = FALSE)
 }
 
 #now need to cast the dataframe
