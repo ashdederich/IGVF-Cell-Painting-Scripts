@@ -564,7 +564,7 @@ suffix = '_normalized_feature_select_negcon_batch.csv.gz',n_replicates=4):
     null_95perc=np.nanpercentile(null_corr,95)
     plt.rcParams["figure.figsize"] = [5.00, 7.00]
     plt.rcParams["figure.autolayout"] = True
-    sns_vp=sns.violinplot(data=corr,x='groups',y='vals')
+    sns_vp=sns.violinplot(data=corr,x='groups',y='vals', inner='stick')
     sns_vp.axhline(null_95perc,color='r',ls='--')
     sns_vp.set(title='Percent Replicating, '+ batch_name,xlabel='Replicate Group',ylabel='Replicate Correlation Coefficient')
     sns_vp.figure.savefig('Replicate_ViolinPlot.png')
