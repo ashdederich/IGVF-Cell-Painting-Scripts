@@ -42,6 +42,14 @@ def remove_negcon_empty_wells(df):
     )
     return df
 
+def wrap_labels(ax, width, break_long_words=False):
+    labels = []
+    for label in ax.get_xticklabels():
+        text = label.get_text()
+        labels.append(textwrap.fill(text, width=width,
+                      break_long_words=break_long_words))
+    ax.set_xticklabels(labels, rotation=0)
+
 def percent_score(null_dist, corr_dist, how='right'):
     """
     Calculates the Percent replicating
@@ -513,7 +521,7 @@ suffix = '_normalized_feature_select_negcon_batch.csv.gz',n_replicates=4):
 
     return(prop_95)
 
-def calculate_percent_replicating_Target_for_plotting(batch_path,platelist,batch_name,sphere=None,
+def calculate_percent_replicating_Target_for_plotting(batch_path,platelist,batch_name,plot_data_vals=None,sphere=None,
 suffix = '_normalized_feature_select_negcon_batch.csv.gz',n_replicates=4):
     """
     For plates treated with the JUMP-Target source plates, most 
@@ -564,11 +572,21 @@ suffix = '_normalized_feature_select_negcon_batch.csv.gz',n_replicates=4):
     null_95perc=np.nanpercentile(null_corr,95)
     plt.rcParams["figure.figsize"] = [5.00, 7.00]
     plt.rcParams["figure.autolayout"] = True
-    sns_vp=sns.violinplot(data=corr,x='groups',y='vals', inner='stick')
-    sns_vp.axhline(null_95perc,color='r',ls='--')
-    sns_vp.set(title='Percent Replicating, '+ batch_name,xlabel='Replicate Group',ylabel='Replicate Correlation Coefficient')
-    sns_vp.figure.savefig('Replicate_ViolinPlot.png')
-    print(f'Saved to Replicate_ViolinPlot.png')
+    
+    sns_vp_baw=sns.violinplot(data=corr,x='groups',y='vals')
+    sns_vp_baw.axhline(null_95perc,color='r',ls='--')
+    sns_vp_baw.set(title='Percent Replicating, '+ batch_name,xlabel='Replicate Group',ylabel='Replicate Correlation Coefficient')
+    sns_vp_baw.figure.savefig('Replicate_ViolinPlot_BAW.png')
+    print(f'Saved to Replicate_ViolinPlot_BAW.png')
+    
+    if plot_data_vals == 'TRUE':
+        sns_vp_dat=sns.violinplot(data=corr,x='groups',y='vals', inner='stick')
+        sns_vp_dat.axhline(null_95perc,color='r',ls='--')
+        sns_vp_dat.set(title='Percent Replicating, '+ batch_name,xlabel='Replicate Group',ylabel='Replicate Correlation Coefficient')
+        sns_vp_dat.figure.savefig('Replicate_ViolinPlot_Data.png')
+        print(f'Saved to Replicate_ViolinPlot_Data.png')
+
+    print(f'Plotting is complete')
 
 def calculate_percent_replicating_across_plates_Target(batch_path1,plate1,batch_path2,plate2 ):
     """
