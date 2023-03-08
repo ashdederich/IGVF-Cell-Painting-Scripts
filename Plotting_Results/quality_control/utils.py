@@ -521,7 +521,7 @@ suffix = '_normalized_feature_select_negcon_batch.csv.gz',n_replicates=4):
 
     return(prop_95)
 
-def calculate_percent_replicating_Target_for_plotting(batch_path,platelist,batch_name,plot_data_vals=None,sphere=None,
+def calculate_percent_replicating_Target_for_plotting(batch_path,platelist,batch_name,plot_data_vals,sphere=None,
 suffix = '_normalized_feature_select_negcon_batch.csv.gz',n_replicates=4):
     """
     For plates treated with the JUMP-Target source plates, most 
@@ -579,7 +579,7 @@ suffix = '_normalized_feature_select_negcon_batch.csv.gz',n_replicates=4):
     sns_vp_baw.figure.savefig('Replicate_ViolinPlot_BAW.png')
     print(f'Saved to Replicate_ViolinPlot_BAW.png')
     
-    if plot_data_vals == True':
+    if plot_data_vals == True:
         sns_vp_dat=sns.violinplot(data=corr,x='groups',y='vals', inner='stick')
         sns_vp_dat.axhline(null_95perc,color='r',ls='--')
         sns_vp_dat.set(title='Percent Replicating, '+ batch_name,xlabel='Replicate Group',ylabel='Replicate Correlation Coefficient')
