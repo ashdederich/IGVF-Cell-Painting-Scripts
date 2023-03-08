@@ -13,8 +13,7 @@ file_3=args[3]
 #function to make files back into short and wide format
 reshape_files<-function(a_file){
     data<-fread(a_file)
-    data_cast<-cast(data,plate+Metadata_Well~variable,value="Median",fun.aggregate=sum)
-    colnames(data_cast)[1]<-"Metadata_Plate"
+    data_cast<-cast(data,Metadata_Plate+Metadata_Well~variable,value="Median",fun.aggregate=sum)
     return(data_cast)
 }
 
