@@ -1,5 +1,5 @@
 #!/usr/bin/env Rscript
-#Merge each file outputted from CellProfiler (e.g. Cells.csv, Nucleus.csv, and Cytoplasm.csv) into one jointed plate csv file for input into PyCytominer.
+#Merge each file outputted from CellProfiler (e.g. Cells.csv, Nucleus.csv, and Cytoplasm.csv) into one jointed plate csv file for input into PyCytominer. This script assumes that you have aggregated the data on a per-well basis already used the aggregate
 
 library(data.table)
 library(reshape)
