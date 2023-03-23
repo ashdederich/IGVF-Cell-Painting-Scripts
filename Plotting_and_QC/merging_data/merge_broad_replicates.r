@@ -25,7 +25,7 @@ if(grepl("feat",filetype,fixed=TRUE)==TRUE){
         file_3=paste0(plate3,"/",plate3,"_normalized_feature_select_negcon_batch.csv.gz")
         file_4=paste0(plate4,"/",plate4,"_normalized_feature_select_negcon_batch.csv.gz")
 } else {
-    print("There is no matching file")
+    print("There is no matching file. Did you use the feature-selected file or the negative-control file?")
 }
 
 #first need to reshape the dataframe to be tall and skinny for ease of merging the files
