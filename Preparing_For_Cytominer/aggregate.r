@@ -10,10 +10,8 @@ library(R.utils)
 
 #input file - i.e. IGVFCells.csv.gz
 datafile=args[1]
-fileheader=args[2]
-plateid=args[3]
 
-aggregate_data<-function(input_file){
+aggregate_data<-function(input_file,fileheader,plateid){
     #get the filename
     filename<-sub("\\.csv.gz.*","",input_file)
     #get the cell location to append to the feature name
@@ -43,4 +41,4 @@ aggregate_data<-function(input_file){
     write.csv(mean_ofdata,gzfile(paste0(filename,"_aggregated",".csv.gz")))
 }
 
-aggregate_data(datafile)
+aggregate_data(datafile,fileheader=args[2],plateid=args[3])
