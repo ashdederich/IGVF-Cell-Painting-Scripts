@@ -537,7 +537,7 @@ suffix = '_normalized_feature_select_negcon_batch.csv.gz',n_replicates=4):
     not done, done at the plate level by passing 'sphere=plate', or 
     done at the batch level by passing 'sphere=batch'.
     """
-    metadata_compound_name = 'Metadata_cell_type'
+    metadata_compound_name = 'Metadata_pert_iname'
     n_samples_strong = 10000
 
     data_dict = {}
@@ -560,6 +560,8 @@ suffix = '_normalized_feature_select_negcon_batch.csv.gz',n_replicates=4):
 
     replicate_corr = list(corr_between_replicates(data_df, metadata_compound_name))
     null_corr = list(corr_between_non_replicates(data_df, n_samples=n_samples_strong, n_replicates=n_replicates, metadata_compound_name = metadata_compound_name))
+    prop_95, _ = percent_score(null_corr, replicate_corr)
+    prop_95=round(prop_95,2)
 
     length_NA=len(null_corr)-len(replicate_corr)
     NA_list=pd.Series([float('nan')]*length_NA).tolist()
@@ -576,6 +578,7 @@ suffix = '_normalized_feature_select_negcon_batch.csv.gz',n_replicates=4):
     sns_vp_baw=sns.violinplot(data=corr,x='groups',y='vals')
     sns_vp_baw.axhline(null_95perc,color='r',ls='--')
     sns_vp_baw.set(title='Percent Replicating, '+ batch_name,xlabel='Replicate Group',ylabel='Replicate Correlation Coefficient')
+    sns_vp_baw.text(0.7,0.95,prop_95+'% Replicating',size='medium',color='black',weight='semibold')
     sns_vp_baw.figure.savefig('Replicate_ViolinPlot_BAW.png')
     print(f'Saved to Replicate_ViolinPlot_BAW.png')
     
@@ -583,6 +586,7 @@ suffix = '_normalized_feature_select_negcon_batch.csv.gz',n_replicates=4):
         sns_vp_dat=sns.violinplot(data=corr,x='groups',y='vals', inner='stick')
         sns_vp_dat.axhline(null_95perc,color='r',ls='--')
         sns_vp_dat.set(title='Percent Replicating, '+ batch_name,xlabel='Replicate Group',ylabel='Replicate Correlation Coefficient')
+        sns_vp_dat.text(0.7,0.95,prop_95+'% Replicating',size='medium',color='black',weight='semibold')
         sns_vp_dat.figure.savefig('Replicate_ViolinPlot_Data.png')
         print(f'Saved to Replicate_ViolinPlot_Data.png')
 
