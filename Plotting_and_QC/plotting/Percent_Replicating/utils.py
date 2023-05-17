@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 #adapted with appreciation from https://github.com/carpenterlab/2022_Cimini_NatureProtocols/blob/main/notebooks/utils.py
 
 
