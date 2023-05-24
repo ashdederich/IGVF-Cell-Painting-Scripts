@@ -9,10 +9,10 @@ library(tools)
 library(R.utils)
 library(ggplot2)
 
-cells=args[1]
-cyto=args[2]
-nuclei=args[3]
-image=fread(args[4])
+#cells=args[1]
+#cyto=args[2]
+#nuclei=args[3]
+#image=fread(args[4])
 
 input_file<-args[1]
 
@@ -46,4 +46,4 @@ na_count_by_row<-function(df){
 
 file_na<-na_summary(input_file)
 
-ggplot(file_na,aes(x=variable,y=Cells_NA_Count))+geom_bar(stat='identity')+labs(title=paste0("Percentage of NAs Output by CellProfiler Per Feature, ",unique(file_na$CellCompartment)," File"),y="Percent NA",x="CellProfiler Feature in Alphabetical Order")+theme_bw()+theme(axis.text.x=element_blank(),axis.ticks.x=element_blank())
+ggplot(file_na,aes(x=variable,y=NA_Count))+geom_bar(stat='identity')+labs(title=paste0("Percentage of NAs Output by CellProfiler Per Feature, ",unique(file_na$CellCompartment)," File"),y="Percent NA",x="CellProfiler Feature in Alphabetical Order")+theme_bw()+theme(axis.text.x=element_blank(),axis.ticks.x=element_blank())
