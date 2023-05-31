@@ -17,17 +17,19 @@ library(ggplot2)
 input_file<-args[1]
 
 na_summary<-function(data){
-    cell_location<-gsub(".*IGVF|.csv.gz*","",data)
+    #cell_location<-gsub(".*IGVF|.csv.gz*","",data)
     data<-fread(data)
     #plate<-unique(data$Metadata_Plate)
-    data_dd<-data[,grep("AreaShape_Area",colnames(data)):ncol(data)]
+    col_start<-grep("AreaShape_Area",colnames(data))[[1]]
+    data_dd<-data[,col_start:ncol(data)]
     data=cbind(Metadata_Plate=data$Metadata_Plate,Metadata_Well=data$Metadata_Well,data_dd)
     data_melt<-melt(data,id.vars=c("Metadata_Plate","Metadata_Well"))
     na_count<-aggregate(value~variable,data_melt,function(x) { sum(is.na(x)) }, na.action=NULL)
-    num_cells=length(which(data_melt$variable=="AreaShape_Area"))
-    na_count$value=na_count$value/num_cells
-    names(na_count)[names(na_count)=="value"]<-paste0(cell_location,"_NA_Count")
-    na_count$CellCompartment=cell_location
+    #num_cells=length(which(data_melt$variable=="Cells_AreaShape_Area"))
+    num_meas=length(unique(data_melt$variable))
+    na_count$value=(na_count$value/num_meas)*100
+    names(na_count)[names(na_count)=="value"]<-"NA_Count"
+    #na_count$CellCompartment=cell_location
     return(na_count)
 }
 
@@ -45,5 +47,7 @@ na_count_by_row<-function(df){
 }
 
 file_na<-na_summary(input_file)
+plateid=gsub("*.csv.gz","",input_file)
 
-ggplot(file_na,aes(x=variable,y=NA_Count))+geom_bar(stat='identity')+labs(title=paste0("Percentage of NAs Output by CellProfiler Per Feature, ",unique(file_na$CellCompartment)," File"),y="Percent NA",x="CellProfiler Feature in Alphabetical Order")+theme_bw()+theme(axis.text.x=element_blank(),axis.ticks.x=element_blank())
+ggplot(file_na,aes(x=variable,y=NA_Count))+geom_bar(stat='identity')+labs(title=paste0("Percentage of NAs Output by CellProfiler Per Feature, ",unique(file_na$CellCompartment)," File\n",plateid),y="Percent NA",x="CellProfiler Feature in Alphabetical Order")+theme_bw()+theme(axis.text.x=element_blank(),axis.ticks.x=element_blank())
+ggsave(paste0(plateid,"_NA_summary",".png"), type = "cairo")
