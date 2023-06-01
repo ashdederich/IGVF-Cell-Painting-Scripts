@@ -579,7 +579,7 @@ suffix = '_normalized_feature_select_negcon_batch.csv.gz',n_replicates=4):
     sns_vp_baw=sns.violinplot(data=corr,x='groups',y='vals')
     sns_vp_baw.axhline(null_95perc,color='r',ls='--')
     sns_vp_baw.set(title='Percent Replicating, '+ batch_name,xlabel='Replicate Group',ylabel='Replicate Correlation Coefficient')
-    sns_vp_baw.text(0.7,0.95,prop_95+'% Replicating',size='medium',color='black',weight='semibold')
+    #sns_vp_baw.text(0.7,0.95,prop_95+'% Replicating',size='medium',color='black',weight='semibold')
     sns_vp_baw.figure.savefig('Replicate_ViolinPlot_BAW.png')
     print(f'Saved to Replicate_ViolinPlot_BAW.png')
     
