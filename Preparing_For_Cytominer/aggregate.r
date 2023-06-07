@@ -40,7 +40,7 @@ aggregate_data<-function(input_file,fileheader,plateid){
     mean_ofdata=melt(mean_ofdata)
     names(mean_ofdata)[names(mean_ofdata)=="value"]<-"Mean"
     agg_wellcount<-length(unique(mean_ofdata$Metadata_Well))
-    if(wellcount=agg_wellcount){ # AND num reps are correct AND anything else???{ #should these be nested if statements?
+    if(wellcount==agg_wellcount){ # AND num reps are correct AND anything else???{ #should these be nested if statements?
         #outputting the file
         write.csv(mean_ofdata,gzfile(paste0(filename,"_aggregated",".csv.gz")))
     }else{
