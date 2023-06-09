@@ -1,137 +1,176 @@
 #!/usr/bin/env nextflow
 
-/*this is the directory that leads to all of the plates*/
-image_dir_ch=Channel.fromPath('/project/shared/gcrb_igvf/ashley/*')
-image_dir_ch.into {image_dir_loaddata; image_dir_illumcorrection; image_dir_analysis }
-/* cell profiler pipeline for illumination correction */
-illum_correct_pipe=Channel.fromPath('/path/to/cellprofiler/illum/pipeline/*.cppipe')
-/* cell profiler pipeline for analysis */
-analysis_pipe=Channel.fromPath('/path/to/cellprofiler/analysis/pipeline/*.cppipe')
-/*a text file with the list of cellular locations, one per line. These must match how they are written in the .npy files*/
-cellfile_ch=Channel.fromPath('/path/to/cellfile/cell_locations.txt')
-config_ch=Channel.fromPath('/path/to/pycyto/configFiles/*_config.yml')
+/*NOTE: All plate IDs within a batch must end in a '_1' to be recognized by Nextflow in this script*/
+params.userid=''
 params.batch=''
-barcode_platemap_ch=Channel.fromPath('/path/to/platemap/barcode_platemap.csv')
-platemap_ch=Channel.fromPath('/same/path/as/above/platemap.txt')
-metadata_ch=Channel.fromPath('/path/to/external_metadata/metadata.tsv')
+image_dir_ch=Channel.fromPath("/path/to/images/${params.batch}/*_1/",type: 'dir').map { [ it.name, it ] }.into {image_dir_loaddata; image_dir_illumcorrection; image_dir_analysis }
+params.cellprofanalysis=''
 
-
-process createLoadDataCsvs{
-    publishDir 'workdir_ch/load_data_csv/${params.batch}/${plateid}/', mode: 'move'
+process pwdloaddata{
+    cache 'lenient'
+    label 'coreutils'
     tag "${plateid}"
 
     input:
-    path image_dir from image_dir_loaddata
-    
-    ouput:
-    tuple val (plateid), file("{plateid}_load_data.csv") into load_data_csv_ch
+    tuple val(plateid), path("imagedir") from image_dir_loaddata
+
+    output:
+    tuple val(plateid), file("${plateid}_pwd.txt"), path("imagedir") into loaddata_ch
 
     script:
     """
-   ./generate_load_data.sh $image_dir
-   mv ${image_dir_ch}/load_data.csv ${plateid}_load_data.csv
+    readlink ${imagedir} > ${plateid}_pwd.txt
+    """
+}
+
+process createLoadDataCsvs{
+    cache 'lenient'
+    publishDir "/path/to/load_data_csv/${params.batch}/${plateid}/", mode: 'copy'
+    label 'pycytoandr'
+    tag "${plateid}"
+
+    input:
+    tuple val(plateid), file("${plateid}_pwd.txt"), path("imagedir") from loaddata_ch
+    file lettertonum from "/path/to/nextflow_docs/bin/letter_to_number.r"
+
+    output:
+    tuple val(plateid), file("${plateid}_load_data.csv"), path("imagedir") into illum_correction_ch
+
+    script:
+    """
+    echo ${plateid} > platename.txt
+    mv platename.txt ${imagedir}
+    mv ${plateid}_pwd.txt ${imagedir}
+    cp ${lettertonum} ${imagedir}/letter_to_number.r
+    generate_load_data.sh $imagedir
+    mv ${imagedir}/load_data.csv ${plateid}_load_data.csv
    """
 }
 
 process illuminationMeasurement{
-    publishDir 'workdir_ch/illum/${params.batch}/${plateid}/', mode: 'move'
+    cache 'lenient'
+    publishDir "/path/to/illum/${params.batch}/${plateid}/", mode: 'copy'
     tag "${plateid}"
-    
+    label 'cellprof'
+
     input:
-    /*load_data.csv file*/
-    tuple val(plateid), file("${plateid}_load_data.csv") from load_data_csv_ch
-    /*path to the images*/
-    path(image_dir) from image_dir_illumcorrection
-    /*file for cellprofiler pipeline*/
-    file illumpipe from illum_correct_pipe
+    tuple val(plateid), file("${plateid}_load_data.csv"), path("imagedir") from illum_correction_ch
+    file illumpipe from '/path/to/pipelines/Cell_Painting_Illum_8x_remade.cppipe'
 
     output:
-    tuple val(plateid), path("${plateid}_out/${plateid}_illumAGP.npy"), path("${plateid}_out/${plateid}_illumDNA.npy"), path("${plateid}_out/${plateid}_illumER.npy"), path("${plateid}_out/${plateid}_illumMito.npy") into illum_npy_files
-    tuple val(plateid), file("${plateid}_load_data.csv") into load_data_IllumCSV_generation
+    tuple val(plateid), path("${plateid}_out/${plateid}_illumAGP.npy"), path("${plateid}_out/${plateid}_illumDNA.npy"), path("${plateid}_out/${plateid}_illumER.npy"), path("${plateid}_out/${plateid}_illumMito.npy"), file("${plateid}_load_data.csv"), path("imagedir") into illum_npy_files
 
     script:
     """
-    cellprofiler -c -r -p ${illumpipe} --data-file ${plateid}_load_data.csv -i $image_dir -o ${plateid}_out
+    cp \$(cat ${illumpipe}) .
+    cellprofiler -c -r -p Cell_Painting_Illum_8x_remade.cppipe --data-file ${plateid}_load_data.csv -i $imagedir -o ${plateid}_out
+    mv ${plateid}_out/IGVF/Plate_illumAGP.npy ${plateid}_out/${plateid}_illumAGP.npy
+    mv ${plateid}_out/IGVF/Plate_illumDNA.npy ${plateid}_out/${plateid}_illumDNA.npy
+    mv ${plateid}_out/IGVF/Plate_illumER.npy ${plateid}_out/${plateid}_illumER.npy
+    mv ${plateid}_out/IGVF/Plate_illumMito.npy ${plateid}_out/${plateid}_illumMito.npy
     """
-/*I need to download cellprofiler and pycytominer into a singularity or docker container*/   
 }
 
 process createIllumLoadDataCsvs{
-    publishDir 'workdir_ch/load_data_csv/${params.batch}/${plateid}/', mode: 'move'
+    cache 'lenient'
+    publishDir "/path/to/load_data_csv/${params.batch}/${plateid}/", mode: 'copy'
     tag "${plateid}"
-    
+    label 'pycytoandr'
+
     input:
-    tuple val(plateid), file("${plateid}_illumAGP.npy"), file("${plateid}_illumDNA.npy"), file("${plateid}_illumER.npy"), file("${plateid}_illumMito.npy") from illum_npy_files
-    tuple val(plateid), file("${plateid}_load_data.csv") from load_data_IllumCSV_generation
-    file cellfile from cellfile_ch
+    tuple val(plateid), path("${plateid}_out/${plateid}_illumAGP.npy"), path("${plateid}_out/${plateid}_illumDNA.npy"), path("${plateid}_out/${plateid}_illumER.npy"), path("${plateid}_out/${plateid}_illumMito.npy"), file("${plateid}_load_data.csv"), path("imagedir") from illum_npy_files
 
     output:
-    tuple val(plateid), file("${plateid}_load_data_with_illum.csv") into illum_loaddata_ch
-
+    tuple val(plateid), file("${plateid}_load_data_with_illum.csv"), path("imagedir"), file("${plateid}_load_data.csv") into illum_loaddata_ch
 
     script:
     """
-    ./generate_illumCsv.sh ${plateid}_load_data.csv $cellfile
+    echo ${plateid} > platename.txt
+    generate_illumCsv.sh ${plateid}_out ${plateid}_load_data.csv
+    mv ${plateid}_out/${plateid}_load_data_with_illum.csv .
     """
 
 }
 
 process cpAnalysis{
-    publishDir 'workdir_ch/profiles/${params.batch}/${plateid}/', mode: 'move'
+    cache 'lenient'
+    publishDir "/path/to/profiles/${params.batch}/${plateid}/", mode: 'copy'
     tag "${plateid}"
-    
+    label 'cellprof'
+
     input:
-    tuple val(plateid), file("${plateid}_load_data_with_illum.csv") into illum_loaddata_ch
-    file analysispipe from analysis_pipe
-    path(image_dir) from image_dir_analysis
+    tuple val(plateid), file("${plateid}_load_data_with_illum.csv"), path("imagedir"), file("${plateid}_load_data.csv") from illum_loaddata_ch
+    file analysispipe from params.cellprofanalysis
 
     output:
-    tuple val(plateid), path("${plateid}_out/IGVF_painting_results/${plateid}_IGVFCells.csv"), path("${plateid}_out/IGVF_painting_results/${plateid}_IGVFCytoplasm.csv"), path("${plateid}_out/IGVF_painting_results/${plateid}_IGVFNuclei.csv") into analysis_output_ch
-    tuple val(plateid), file("${plateid}_load_data_with_illum.csv") into load_data_for_PyCyto_ch
+    tuple val(plateid), path("${plateid}_out/IGVF_painting_results/${plateid}_IGVFCells.csv"), path("${plateid}_out/IGVF_painting_results/${plateid}_IGVFCytoplasm.csv"), path("${plateid}_out/IGVF_painting_results/${plateid}_IGVFNuclei.csv"), path("${plateid}_load_data_with_illum.csv"), file("${plateid}_load_data.csv") into analysis_output_ch
 
     script:
     """
-    cellprofiler -c -r -p $analysispipe --data-file ${plateid}_load_data_with_illum.csv -i $image_dir
+    cp \$(cat ${analysispipe}) .
+    cellprofiler -c -r -p Cell_Painting_Analysis_IGVF_loaddata.cppipe --data-file ${plateid}_load_data_with_illum.csv -i $imagedir -o ${plateid}_out
     mv ${plateid}_out/IGVF_painting_results/IGVFCells.csv ${plateid}_out/IGVF_painting_results/${plateid}_IGVFCells.csv
     mv ${plateid}_out/IGVF_painting_results/IGVFCytoplasm.csv ${plateid}_out/IGVF_painting_results/${plateid}_IGVFCytoplasm.csv
     mv ${plateid}_out/IGVF_painting_results/IGVFNuclei.csv ${plateid}_out/IGVF_painting_results/${plateid}_IGVFNuclei.csv
     """
 }
 
-process prepare_for_PyCyto{
-    publishDir 'workdir_ch/profiles/${params.batch}/${plateid}/', mode: 'move'
+process zipfiles{
+    cache 'lenient'
+    publishDir "/path/to/profiles/${params.batch}/${plateid}/", mode: 'copy'
     tag "${plateid}"
-    
+    label 'tabix'
+
     input:
-    tuple val(plateid), path("${plateid}_out/IGVF_painting_results/${plateid}_IGVFCells.csv"), path("${plateid}_out/IGVF_painting_results/${plateid}_IGVFCytoplasm.csv"), path("${plateid}_out/IGVF_painting_results/${plateid}_IGVFNuclei.csv") from analysis_output_ch
+    tuple val(plateid), path("${plateid}_out/IGVF_painting_results/${plateid}_IGVFCells.csv"), path("${plateid}_out/IGVF_painting_results/${plateid}_IGVFCytoplasm.csv"), path("${plateid}_out/IGVF_painting_results/${plateid}_IGVFNuclei.csv"), path("${plateid}_load_data_with_illum.csv"), file("${plateid}_load_data.csv") from analysis_output_ch
 
     output:
-    tuple val(plateid), file("${plateid}.csv.gz") into pycyto_prepare_ch
+    tuple val(plateid), path("${plateid}_out/IGVF_painting_results/${plateid}_IGVFCells.csv.gz"), path("${plateid}_out/IGVF_painting_results/${plateid}_IGVFCytoplasm.csv.gz"), path("${plateid}_out/IGVF_painting_results/${plateid}_IGVFNuclei.csv.gz"), path("${plateid}_load_data.csv.gz") into analysis_gzip_ch
 
     script:
     """
-    ./aggregate_cellpainting.r ${plateid}_out/IGVF_painting_results/${plateid}_IGVFCells.csv
-    ./aggregate_cellpainting.r ${plateid}_out/IGVF_painting_results/${plateid}_IGVFCytoplasm.csv
-    ./aggregate_cellpainting.r ${plateid}_out/IGVF_painting_results/${plateid}_IGVFNuclei.csv
-    ./merge_files.r ${plateid}_out/IGVF_painting_results/${plateid}_IGVFCells.csv ${plateid}_out/IGVF_painting_results/${plateid}_IGVFCytoplasm.csv ${plateid}_out/IGVF_painting_results/${plateid}_IGVFNuclei.csv
-    bgzip -@ ${task.cpus} ${plateid}.csv
+    bgzip -@ ${task.cpus} ${plateid}_out/IGVF_painting_results/${plateid}_IGVFCells.csv
+    bgzip -@ ${task.cpus} ${plateid}_out/IGVF_painting_results/${plateid}_IGVFCytoplasm.csv
+    bgzip -@ ${task.cpus} ${plateid}_out/IGVF_painting_results/${plateid}_IGVFNuclei.csv
+    bgzip -@ ${task.cpus} ${plateid}_load_data.csv
     """
 }
 
-process create_PyCyto_Dirs{
+process prepare_for_PyCyto{
+    cache 'lenient'
+    publishDir "/path/to/profiles/${params.batch}/${plateid}/", mode: 'copy'
     tag "${plateid}"
-    tag "${params.batch}"
+    label 'pycytoandr'
 
     input:
-    tuple val(plateid), file("${plateid}.csv.gz") from pycyto_prepare_ch
-    file(barcode_platemap) from barcode_platemap_ch
-    file(platemap) from platemap_ch
-    file(metadata) from metadata_ch
-    tuple val(plateid), file("${plateid}_load_data_with_illum.csv") from load_data_for_PyCyto_ch
+    tuple val(plateid), path("${plateid}_out/IGVF_painting_results/${plateid}_IGVFCells.csv.gz"), path("${plateid}_out/IGVF_painting_results/${plateid}_IGVFCytoplasm.csv.gz"), path("${plateid}_out/IGVF_painting_results/${plateid}_IGVFNuclei.csv.gz"), path("${plateid}_load_data.csv.gz") from analysis_gzip_ch
 
     output:
-    /*will need to update this with the actual file names*/
-    tuple val(plateid), path("metadata/platemaps/${params.batch}/barcode_platemap.csv"), path("metadata/external_metadata/metadata.tsv"), path("metadata/platemaps/${params.batch}/platemap/platemap.txt"), path("profiles/${params.batch}/${plateid}/${plateid}.csv.gz"), path("load_data_csv/${params.batch}/${plateid}/${plateid}_load_data_with_illum.csv") into for_pycyto_ch 
+    tuple val(plateid), path("${plateid}.csv.gz"), path("${plateid}_load_data.csv.gz") into pycyto_prepare_ch
+
+    script:
+    """
+    aggregate.r ${plateid}_out/IGVF_painting_results/${plateid}_IGVFCells.csv.gz ${plateid}_IGVF ${plateid}
+    aggregate.r ${plateid}_out/IGVF_painting_results/${plateid}_IGVFCytoplasm.csv.gz ${plateid}_IGVF ${plateid}
+    aggregate.r ${plateid}_out/IGVF_painting_results/${plateid}_IGVFNuclei.csv.gz ${plateid}_IGVF ${plateid}
+    merge_aggregated.r ${plateid}_out/IGVF_painting_results/${plateid}_IGVFCells_aggregated.csv.gz ${plateid}_out/IGVF_painting_results/${plateid}_IGVFCytoplasm_aggregated.csv.gz ${plateid}_out/IGVF_painting_results/${plateid}_IGVFNuclei_aggregated.csv.gz
+    """
+}
+
+process createdirs{
+    cache 'lenient'
+    tag "${plateid}"
+    label 'pycytoandr'
+    publishDir "/path/to/workspace", mode: 'copy'
+
+    input:
+    tuple val(plateid), path("${plateid}.csv.gz"), path("${plateid}_load_data.csv.gz") from pycyto_prepare_ch
+    file(barcode_platemap) from "/path/to/metadata/platemaps/${params.batch}/barcode_platemap.csv"
+    file(metadata) from "/path/to/metadata/external_metadata/${params.batch}_metadata.txt"
+    file(platemap) from "/path/to/metadata/platemaps/${params.batch}/platemap/${params.batch}_platemap.txt"
+
+    output:
+    tuple val(plateid), path("metadata/platemaps/${params.batch}/barcode_platemap.csv"), path("metadata/external_metadata/${params.batch}_metadata.txt"), path("metadata/platemaps/${params.batch}/platemap/${params.batch}_platemap.txt"), path("profiles/${params.batch}/${plateid}/${plateid}.csv.gz"), path("load_data_csv/${params.batch}/${plateid}/load_data.csv.gz"), path("gct/${params.batch}/${plateid}/${plateid}.csv.gz") into for_pycyto_ch 
     
     script:
     """
@@ -139,53 +178,14 @@ process create_PyCyto_Dirs{
     mkdir -p metadata/external_metadata
     mkdir -p metadata/platemaps/${params.batch}/platemap
     mkdir -p load_data_csv/${params.batch}/${plateid}
+    mkdir -p gct/${params.batch}/${plateid}
 
-    ln -s $barcode_platemap metadata/platemaps/${params.batch}/
-    ln -s $platemap metadata/platemaps/${params.batch}/platemap/
-    ln -s $metadata metadata/external_metadata/
-    ln -s ${plateid}.csv.gz profiles/${params.batch}/${plateid}/
-    ln -s ${plateid}_load_data_with_illum.csv load_data_csv/${params.batch}/${plateid}/
-    """
-}
-
-process pyCyto{
-    publishDir 'workdir_ch/profiles/${params.batch}/${plateid}/', mode: 'move'
-    tag "${plateid}"
-    tag "${params.batch}"
-
-    input:
-    tuple val(plateid), file("${plateid}_config.yml") from config_ch
-    tuple val(plateid), path("metadata/platemaps/${params.batch}/barcode_platemap.csv"), path("metadata/external_metadata/metadata.tsv"), path("metadata/platemaps/${params.batch}/platemap/platemap.txt"), path("profiles/${params.batch}/${plateid}/${plateid}.csv.gz"), path("load_data_csv/${params.batch}/${plateid}/${plateid}_load_data_with_illum.csv") from for_pycyto_ch
-
-    output:
-    tuple val(plateid), path("profiles/${params.batch}/${plateid}/${plateid}.csv.gz"), path("profiles/${params.batch}/${plateid}/${plateid}_normalized_feature_select_batch.csv.gz"), path("profiles/${params.batch}/${plateid}/${plateid}_normalized_feature_select_negcon_batch.csv.gz") into pycyto_output_ch
-    tuple val(plateid), path("quality_control/heatmap/${params.batch}/${plateid}/*.png"), path("quality_control/summary/summary.tsv") into quality_control_ch
-    tuple val(plateid), path("metadata/external_metadata/metadata.tsv"), path("metadata/platemaps/${params.batch}/platemap/platemap.txt") into metadata_ch
-
-
-    script:
-    """
-    python profiling_pipeline.py --config  ${plateid}_config.yml
-    """
-
-}
-
-process qc_figs{
-    publishDir 'workdir_ch/quality_control/correlation_figs/${params.batch}/${plateid}/', mode: 'move'
-    tag "${plateid}"
-    tag "${params.batch}"
-
-    input:
-    tuple val(plateid), path("profiles/${params.batch}/${plateid}/${plateid}.csv.gz"), path("profiles/${params.batch}/${plateid}/${plateid}_normalized_feature_select_batch.csv.gz"), path("profiles/${params.batch}/${plateid}/${plateid}_normalized_feature_select_negcon_batch.csv.gz") from pycyto_output_ch
-    tuple val(plateid), path("metadata/external_metadata/metadata.tsv"), path("metadata/platemaps/${params.batch}/platemap/platemap.txt") from metadata_ch
-
-    output:
-    tuple val(plateid), file("${plateid}_CellProfiler_Output_violin_plot.pdf"), file("${plateid}_Compound_Normalization_violin_plot.pdf"), file("${plateid}_Negcon_Normalization_violin_plot.pdf") into qc_images
-
-    script:
-    """
-    ./create_violin_plots_cellprof.r profiles/${params.batch}/${plateid}/${plateid}.csv.gz metadata/external_metadata/metadata.tsv metadata/platemaps/${params.batch}/platemap/platemap.txt CellProfiler_Output
-    ./create_violin_plots_pycyto.r profiles/${params.batch}/${plateid}/${plateid}_normalized_feature_select_batch.csv.gz Compound_Normalization
-    ./create_violin_plots_pycyto.r profiles/${params.batch}/${plateid}/${plateid}_normalized_feature_select_negcon_batch.csv.gz Negcon_Normalization
+    cp \$(cat ${barcode_platemap}) metadata/platemaps/${params.batch}/
+    cp \$(cat ${platemap}) metadata/platemaps/${params.batch}/platemap/
+    cp \$(cat ${metadata}) metadata/external_metadata/
+    cp ${plateid}.csv.gz profiles/${params.batch}/${plateid}/
+    cp ${plateid}.csv.gz gct/${params.batch}/${plateid}/
+    cp ${plateid}_load_data.csv.gz load_data_csv/${params.batch}/${plateid}/
+    mv load_data_csv/${params.batch}/${plateid}/${plateid}_load_data.csv.gz load_data_csv/${params.batch}/${plateid}/load_data.csv.gz
     """
 }
